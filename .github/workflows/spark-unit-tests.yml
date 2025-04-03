@@ -1,12 +1,10 @@
-name: Build and Run Spark Unit Tests
+name: spark-unit-tests
 
 on:
   push:
     branches:
       - main
   pull_request:
-    branches:
-      - "**"
     paths-ignore:
       - '.gitignore'
       - 'README.md'
@@ -33,12 +31,7 @@ jobs:
   build-lance-java:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    strategy:
-      matrix:
-        java-version: [8, 11, 17]
-        scala-version: [2.12]
-        spark-version: [3.4, 3.5]
-    name: Build and Test with Java ${{ matrix.java-version }}
+    name: Build Lance Java
     defaults:
       run:
         working-directory: ./java
@@ -54,13 +47,32 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y protobuf-compiler libssl-dev
-      - name: Set up Java ${{ matrix.java-version }}
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+          cache: "maven"
+      - name: Install Lance Java
+        run: mvn clean install -pl lance-core -DskipTests
+  build-and-test-spark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        java-version: [ 8, 11, 17 ]
+        scala-version: [ 2.12 ]
+        spark-version: [ 3.4, 3.5 ]
+    steps:
+      - name: Checkout lance-spark repo
+        uses: actions/checkout@v4
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java-version }}
           cache: "maven"
-      - name: Running tests with Java ${{ matrix.java-version }}
+      - name: Running tests with Java ${{ matrix.java-version }} Scala ${{matrix.scala_version }} for Spark ${{ matrix.spark_version }}
         run: |
           if [ "${{ matrix.java-version }}" == "17" ]; then
             export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS \
@@ -83,35 +95,4 @@ jobs:
             -Djdk.reflect.useDirectMethodHandle=false \
             -Dio.netty.tryReflectionSetAccessible=true"
           fi
-          mvn clean install -pl lance-core -DskipTests
-            - name: Checkout repository
-  build-and-test-spark:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    steps:
-      - name: Checkout lance-spark repo
-        uses: actions/checkout@v4
-      - name: Running tests with Java ${{ matrix.java-version }} Scala {{matrix.scala_version }} for Spark {{ matrix.spark_version }}
-        run: |
-          if [ "${{ matrix.java-version }}" == "17" ]; then
-            export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS \
-            -XX:+IgnoreUnrecognizedVMOptions \
-            --add-opens=java.base/java.lang=ALL-UNNAMED \
-            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
-            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
-            --add-opens=java.base/java.io=ALL-UNNAMED \
-            --add-opens=java.base/java.net=ALL-UNNAMED \
-            --add-opens=java.base/java.nio=ALL-UNNAMED \
-            --add-opens=java.base/java.util=ALL-UNNAMED \
-            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
-            --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
-            --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED \
-            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
-            --add-opens=java.base/sun.nio.cs=ALL-UNNAMED \
-            --add-opens=java.base/sun.security.action=ALL-UNNAMED \
-            --add-opens=java.base/sun.util.calendar=ALL-UNNAMED \
-            --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED \
-            -Djdk.reflect.useDirectMethodHandle=false \
-            -Dio.netty.tryReflectionSetAccessible=true"
-          fi
-          ./mvnw clean install -Pspark-{{ matrix.spark_version }} -Pscala-{{ matrix.scala_version }} -pl lance-spark-{{ matrix.spark_version }} -am
+          ./mvnw clean install -Pspark-${{ matrix.spark_version }} -Pscala-${{ matrix.scala_version }} -pl lance-spark-${{ matrix.spark_version }} -am

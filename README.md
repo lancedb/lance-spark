@@ -12,6 +12,11 @@ and machine learning training capabilities on the AI data lake powered by Lance.
 
 ## Features
 
+The connector is built using the Spark DatasourceV2 API. 
+Please check the [this presentation](https://www.slideshare.net/databricks/apache-spark-data-source-v2-with-wenchen-fan-and-gengliang-wang)
+to learn more about its features.
+Specifically, you can use the Apache Spark Connector for Lance to:
+
 * **Query Lance Datasets**: Seamlessly query datasets stored in the Lance format using Spark.
 * **Distributed, Parallel Scans**: Leverage Spark's distributed computing capabilities to perform parallel scans on Lance datasets.
 * **Column and Filter Pushdown**: Optimize query performance by pushing down column selections and filters to the data source.
@@ -22,7 +27,7 @@ and machine learning training capabilities on the AI data lake powered by Lance.
 
 Java: 8, 11, 17
 Scala: 2.12
-Spark: 3.4, 3.5 (default to 3.5)
+Spark: 3.4, 3.5
 Operating System: Linux x86, macOS
 
 ### Download jar
@@ -64,18 +69,16 @@ data.show(100);
 
 More examples can be found in [SparkLanceConnectorReadTest](/lance-spark-base/src/test/java/com/lancedb/lance/spark/read/SparkConnectorReadTestBase.java).
 
-## Future Works
-
-- Add Lance Write Support
-- Add LanceDB Catalog Service Support
-
-## Notes
-
-Spark-Lance connector uses Spark DatasourceV2 API. Please check the [Databricks presentation for DatasourceV2 API](https://www.slideshare.net/databricks/apache-spark-data-source-v2-with-wenchen-fan-and-gengliang-wang).
-
 ## Development Guide
 
-To build everything:
+### Lance Java SDK Dependency
+
+This package is dependent on the Lance Java SDK.
+You need to follow [its guide](https://github.com/lancedb/lance/blob/main/java/README.md) to first build it locally.
+
+### Build Commands
+
+This connector is built using Maven. To build everything:
 
 ```shell
 ./mvnw clean install
@@ -86,6 +89,8 @@ To build everything without running tests:
 ```shell
 ./mvnw clean install -DskipTests
 ```
+
+### Multi-Version Support
 
 We offer the following build profiles for you to switch among different build versions:
 
