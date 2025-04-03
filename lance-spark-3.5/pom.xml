@@ -12,16 +12,16 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>lance-spark-34</artifactId>
+    <artifactId>lance-spark-3.5</artifactId>
     <name>${project.artifactId}</name>
-    <description>Apache Spark 3.4 Connector for Lance</description>
+    <description>Apache Spark 3.5 Connector for Lance</description>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.compat.version}</artifactId>
-            <version>${spark34.version}</version>
+            <version>${spark35.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -130,13 +130,13 @@
                                     <rules>
                                         <requireProperty>
                                             <property>spark.version</property>
-                                            <message>Spark version is not set to 3.4, please use "-P spark-3.4" in your build command</message>
-                                            <regex>^3\.4\.\d+$</regex>
+                                            <message>Spark version is not set to 3.5, please add "-P spark-3.5" in your build command</message>
+                                            <regex>^3\.5\.\d+$</regex>
                                         </requireProperty>
                                         <requireProperty>
-                                            <property>spark.compact.version</property>
-                                            <message>Spark version is not set to 3.4, please use "-P spark-3.4" in your build command</message>
-                                            <regex>^3\.4$</regex>
+                                            <property>spark.compat.version</property>
+                                            <message>Spark version is not set to 3.5, please add "-P spark-3.5" in your build command</message>
+                                            <regex>^3\.5$</regex>
                                         </requireProperty>
                                     </rules>
                                     <fail>true</fail>

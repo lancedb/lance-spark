@@ -63,8 +63,8 @@
 
     <modules>
         <module>lance-spark-base</module>
-        <module>lance-spark-35</module>
-        <module>lance-spark-34</module>
+        <module>lance-spark-3.5</module>
+        <module>lance-spark-3.4</module>
     </modules>
 
     <dependencyManagement>
@@ -123,7 +123,7 @@
         </profile>
 
         <profile>
-            <id>spark-34</id>
+            <id>spark-3.4</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -134,7 +134,7 @@
         </profile>
 
         <profile>
-            <id>spark-35</id>
+            <id>spark-3.5</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>

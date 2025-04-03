@@ -57,7 +57,7 @@ venv.bak/
 # mkdocs documentation
 /site
 
-# For Hive
+# For Spark and Hive
 TempStatsStore/
 metastore/
 metastore_db/
