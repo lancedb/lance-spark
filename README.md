@@ -13,7 +13,7 @@ and machine learning training capabilities on the AI data lake powered by Lance.
 ## Features
 
 The connector is built using the Spark DatasourceV2 API. 
-Please check the [this presentation](https://www.slideshare.net/databricks/apache-spark-data-source-v2-with-wenchen-fan-and-gengliang-wang)
+Please check [this presentation](https://www.slideshare.net/databricks/apache-spark-data-source-v2-with-wenchen-fan-and-gengliang-wang)
 to learn more about its features.
 Specifically, you can use the Apache Spark Connector for Lance to:
 
@@ -75,6 +75,8 @@ More examples can be found in [SparkLanceConnectorReadTest](/lance-spark-base/sr
 
 This package is dependent on the Lance Java SDK.
 You need to follow [its guide](https://github.com/lancedb/lance/blob/main/java/README.md) to first build it locally.
+If your have changes affecting both repositories,
+the PR in `lance-spark` will only pass CI after the PR in `lance` is merged.
 
 ### Build Commands
 
