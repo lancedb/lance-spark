@@ -80,4 +80,4 @@ jobs:
         run: mvn clean install -pl :lance-core -DskipTests -am
       - name: Running tests with Java ${{ matrix.java-version }} Scala ${{ matrix.scala-version }} for Spark ${{ matrix.spark-version }}
         working-directory: lance-spark
-        run: ./mvnw clean install -Pspark-${{ matrix.spark-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }} -am
+        run: mvn clean install -Pspark-${{ matrix.spark-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }} -am
