@@ -20,7 +20,7 @@ env:
   CARGO_BUILD_JOBS: "1"
 
 jobs:
-  build-and-test-spark:
+  build-and-test:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
@@ -29,25 +29,29 @@ jobs:
         scala-version: [ 2.12 ]
         spark-version: [ 3.4, 3.5 ]
     steps:
-      - name: Install Act dependencies
+      - name: Install Sudo if using act for local testing
         if: ${{ env.ACT }}
         run: |
           apt-get update && apt-get install sudo -y
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y protobuf-compiler libssl-dev nodejs
+          sudo apt install -y protobuf-compiler libssl-dev
+      - name: Install NodeJS if using act for local testing
+        if: ${{ env.ACT }}
+        run: |
+          apt-get update && apt-get install nodejs
+      - name: Checkout lance repository
+        uses: actions/checkout@v4
+        with:
+          name: lancedb/lance
+          path: ./lance
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java-version }}
           cache: "maven"
-      - name: Checkout lance repository
-        uses: actions/checkout@v4
-        with:
-          name: lancedb/lance
-          path: ./lance
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: lance/java/core/lance-jni
