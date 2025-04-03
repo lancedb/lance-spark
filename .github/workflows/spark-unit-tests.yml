@@ -1,11 +1,6 @@
-name: Build and Run Java JNI Tests
+name: Build and Run Spark Unit Tests
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types: [opened, reopened]
+on: [push, pull_request]
 
 env:
   # This env var is used by Swatinem/rust-cache@v2 for the cache
@@ -42,7 +37,7 @@ jobs:
       - name: Rust Clippy
         run: cargo clippy --all-targets -- -D warnings
 
-  build-and-test-java:
+  build-lance-java:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     strategy:
@@ -97,6 +92,8 @@ jobs:
           fi
           mvn clean install -pl lance-core -DskipTests
             - name: Checkout repository
+  build-and-test-spark:
+    steps:
       - name: Checkout lance-spark repo
         uses: actions/checkout@v4
       - name: Running tests with Java ${{ matrix.java-version }} Scala {{matrix.scala_version }} for Spark {{ matrix.spark_version }}
