@@ -107,7 +107,7 @@ For example, to use Scala 2.13:
 ./mvnw clean install -Pscala-2.13
 ```
 
-To use Spark 3.4:
+To build a specific version like Spark 3.4:
 
 ```shell
 ./mvnw clean install -Pspark-3.4
@@ -119,7 +119,7 @@ To build only Spark 3.4:
 ./mvnw clean install -Pspark-3.4 -pl lance-spark-3.4 -am
 ```
 
-To create the jar with all dependencies for Spark 3.4:
+Use the `shade-jar` profile to create the jar with all dependencies for Spark 3.4:
 
 ```shell
 ./mvnw clean install -Pspark-3.4 -Pshade-jar -pl lance-spark-3.4 -am
