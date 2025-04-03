@@ -131,12 +131,12 @@
                                         <requireProperty>
                                             <property>spark.version</property>
                                             <message>Spark version is not set to 3.4, please use "-P spark-3.4" in your build command</message>
-                                            <regex>3.4.\d</regex>
+                                            <regex>^3\.4\.\d+$</regex>
                                         </requireProperty>
                                         <requireProperty>
                                             <property>spark.compact.version</property>
                                             <message>Spark version is not set to 3.4, please use "-P spark-3.4" in your build command</message>
-                                            <regex>3.4</regex>
+                                            <regex>^3\.4$</regex>
                                         </requireProperty>
                                     </rules>
                                     <fail>true</fail>

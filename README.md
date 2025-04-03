@@ -73,32 +73,39 @@ Spark-Lance connector uses Spark DatasourceV2 API. Please check the [Databricks 
 
 ## Development Guide
 
-For scala 2.12:
+To build everything:
 
 ```shell
 ./mvnw clean install
 ```
 
-To use Scala 2.13:
+We offer the following build profiles for you to switch among different build versions:
+
+- scala-2.12
+- scala-2.13
+- spark-34
+- spark-35
+
+For example, to use Scala 2.13:
 
 ```shell
-./mvnw clean install -P scala-2.13
+./mvnw clean install -Pscala-2.13
 ```
 
 To use Spark 3.4:
 
 ```shell
-./mvnw clean install -P spark-3.4
+./mvnw clean install -Pspark-34
 ```
 
 To build only Spark 3.4:
 
 ```shell
-./mvnw clean install -P spark-3.4 -pl lance-spark-34 -am
+./mvnw clean install -Pspark-34 -pl lance-spark-34 -am
 ```
 
 To create the jar with all dependencies for Spark 3.4:
 
 ```shell
-./mvnw clean install -P spark-3.4,shade-jar -pl lance-spark-34 -am
+./mvnw clean install -P spark-34,shade-jar -pl lance-spark-34 -am
 ```

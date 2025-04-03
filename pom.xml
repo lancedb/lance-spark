@@ -123,7 +123,7 @@
         </profile>
 
         <profile>
-            <id>spark-3.4</id>
+            <id>spark-34</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>
@@ -134,7 +134,7 @@
         </profile>
 
         <profile>
-            <id>spark-3.5</id>
+            <id>spark-35</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
             </activation>

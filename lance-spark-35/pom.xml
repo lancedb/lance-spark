@@ -130,13 +130,13 @@
                                     <rules>
                                         <requireProperty>
                                             <property>spark.version</property>
-                                            <message>Spark version is not set to 3.5, please use "-P spark-3.4" in your build command</message>
-                                            <regex>3.5.\d</regex>
+                                            <message>Spark version is not set to 3.5, please use "-P spark-3.5" in your build command</message>
+                                            <regex>^3\.5\.\d+$</regex>
                                         </requireProperty>
                                         <requireProperty>
                                             <property>spark.compact.version</property>
-                                            <message>Spark version is not set to 3.5, please use "-P spark-3.4" in your build command</message>
-                                            <regex>3.5</regex>
+                                            <message>Spark version is not set to 3.5, please use "-P spark-3.5" in your build command</message>
+                                            <regex>^3\.5$</regex>
                                         </requireProperty>
                                     </rules>
                                     <fail>true</fail>
