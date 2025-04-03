@@ -30,27 +30,6 @@ env:
   CARGO_BUILD_JOBS: "1"
 
 jobs:
-  rust-clippy-fmt:
-    runs-on: ubuntu-24.04
-    name: Rust Clippy and Fmt Check
-    defaults:
-      run:
-        working-directory: ./java/core/lance-jni
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: java/core/lance-jni
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y protobuf-compiler libssl-dev
-      - name: Run cargo fmt
-        run: cargo fmt --check
-      - name: Rust Clippy
-        run: cargo clippy --all-targets -- -D warnings
-
   build-lance-java:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -107,6 +86,8 @@ jobs:
           mvn clean install -pl lance-core -DskipTests
             - name: Checkout repository
   build-and-test-spark:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     steps:
       - name: Checkout lance-spark repo
         uses: actions/checkout@v4
