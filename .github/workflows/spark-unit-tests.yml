@@ -1,14 +1,6 @@
-name: spark-unit-tests
+name: Spark Unit Tests
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    paths-ignore:
-      - '.gitignore'
-      - 'README.md'
-      - 'LICENSE'
+on: [push, pull_request]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,33 +20,6 @@ env:
   CARGO_BUILD_JOBS: "1"
 
 jobs:
-  build-lance-java:
-    runs-on: ubuntu-24.04
-    timeout-minutes: 60
-    name: Build Lance Java
-    defaults:
-      run:
-        working-directory: ./java
-    steps:
-      - name: Checkout lance repository
-        uses: actions/checkout@v4
-        with:
-          name: lancedb/lance
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: java/core/lance-jni
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y protobuf-compiler libssl-dev
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 8
-          cache: "maven"
-      - name: Install Lance Java
-        run: mvn clean install -pl lance-core -DskipTests
   build-and-test-spark:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
@@ -64,15 +29,30 @@ jobs:
         scala-version: [ 2.12 ]
         spark-version: [ 3.4, 3.5 ]
     steps:
-      - name: Checkout lance-spark repo
-        uses: actions/checkout@v4
+      - name: Install Act dependencies
+        if: ${{ env.ACT }}
+        run: |
+          apt-get update && apt-get install sudo -y
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y protobuf-compiler libssl-dev nodejs
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java-version }}
           cache: "maven"
-      - name: Running tests with Java ${{ matrix.java-version }} Scala ${{matrix.scala_version }} for Spark ${{ matrix.spark_version }}
+      - name: Checkout lance repository
+        uses: actions/checkout@v4
+        with:
+          name: lancedb/lance
+          path: ./lance
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: lance/java/core/lance-jni
+      - name: Setup Java tool options for higher Java versions
+        working-directory: ./lance/java
         run: |
           if [ "${{ matrix.java-version }}" == "17" ]; then
             export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS \
@@ -95,4 +75,13 @@ jobs:
             -Djdk.reflect.useDirectMethodHandle=false \
             -Dio.netty.tryReflectionSetAccessible=true"
           fi
-          ./mvnw clean install -Pspark-${{ matrix.spark_version }} -Pscala-${{ matrix.scala_version }} -pl lance-spark-${{ matrix.spark_version }} -am
+      - name: Install Lance Java SDK
+        working-directory: ./lance/java
+        run: mvn clean install -pl :lance-core -DskipTests -am
+      - name: Checkout lance-spark repo
+        uses: actions/checkout@v4
+        with:
+          path: ./lance-spark
+      - name: Running tests with Java ${{ matrix.java-version }} Scala ${{matrix.scala_version }} for Spark ${{ matrix.spark_version }}
+        working-directory: ./lance-spark
+        run: ./mvnw clean install -Pspark-${{ matrix.spark_version }} -Pscala-${{ matrix.scala_version }} -pl lance-spark-${{ matrix.spark_version }} -am
