@@ -34,10 +34,10 @@ Operating System: Linux x86, macOS
 
 Jars with full dependency are uploaded in public S3 bucket `spark-lance-artifacts`,
 with name pattern `lance-spark-{spark-version}-{scala-version}-{connector-version}-jar-with-dependencies.jar`.
-FOr example, to get Spark 3.5 Scala 2.12 jar for connector version 0.25.2, do:
+FOr example, to get Spark 3.5 Scala 2.12 jar for connector version 0.1.0, do:
 
 ```shell
-wget https://spark-lance-artifacts.s3.amazonaws.com/lance-spark-3.5-2.12-0.25.2-jar-with-dependencies.jar
+wget https://spark-lance-artifacts.s3.amazonaws.com/lance-spark-3.5-2.12-0.1.0-jar-with-dependencies.jar
 ```
 
 ## Quick Start
@@ -45,7 +45,7 @@ wget https://spark-lance-artifacts.s3.amazonaws.com/lance-spark-3.5-2.12-0.25.2-
 Launch `spark-shell` with your selected JAR according to your Spark and Scala version:
 
 ```shell
-spark-shell --jars lance-spark-3.5-2.12-0.25.2-jar-with-dependencies.jar
+spark-shell --jars lance-spark-3.5-2.12-0.1.0-jar-with-dependencies.jar
 ```
 
 Example Usage:

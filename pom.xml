@@ -7,7 +7,7 @@
 
     <groupId>com.lancedb</groupId>
     <artifactId>lance-spark-root</artifactId>
-    <version>0.25.2</version>
+    <version>0.1.0</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
@@ -35,6 +35,9 @@
     </issueManagement>
 
     <properties>
+        <lance-spark.version>0.1.0</lance-spark.version>
+        <lance.version>0.25.3</lance.version>
+
         <spark34.version>3.4.4</spark34.version>
         <spark35.version>3.5.5</spark35.version>
         <spark.version>${spark35.version}</spark.version>
@@ -51,7 +54,6 @@
         <scala213.compat.version>2.13</scala213.compat.version>
         <scala.compat.version>${scala212.compat.version}</scala.compat.version>
 
-        <lance.version>0.25.2</lance.version>
         <junit.version>5.10.1</junit.version>
         <scalatest.version>3.2.10</scalatest.version>
 

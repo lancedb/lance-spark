@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.lancedb</groupId>
         <artifactId>lance-spark-root</artifactId>
-        <version>0.25.2</version>
+        <version>0.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -27,12 +27,12 @@
         <dependency>
             <groupId>com.lancedb</groupId>
             <artifactId>lance-spark-base</artifactId>
-            <version>${lance.version}</version>
+            <version>${lance-spark.version}</version>
         </dependency>
         <dependency>
             <groupId>com.lancedb</groupId>
             <artifactId>lance-spark-base</artifactId>
-            <version>${lance.version}</version>
+            <version>${lance-spark.version}</version>
             <type>test-jar</type>
             <classifier>tests</classifier>
             <scope>test</scope>
