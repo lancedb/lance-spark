@@ -44,8 +44,12 @@ jobs:
       - name: Checkout lance repository
         uses: actions/checkout@v4
         with:
-          name: lancedb/lance
+          repository: lancedb/lance
           path: lance
+      - name: Checkout lance-spark repo
+        uses: actions/checkout@v4
+        with:
+          path: lance-spark
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -82,10 +86,6 @@ jobs:
       - name: Install Lance Java SDK
         working-directory: lance/java
         run: mvn clean install -pl :lance-core -DskipTests -am
-      - name: Checkout lance-spark repo
-        uses: actions/checkout@v4
-        with:
-          path: lance-spark
       - name: Running tests with Java ${{ matrix.java-version }} Scala ${{matrix.scala_version }} for Spark ${{ matrix.spark_version }}
         working-directory: lance-spark
         run: ./mvnw clean install -Pspark-${{ matrix.spark_version }} -Pscala-${{ matrix.scala_version }} -pl lance-spark-${{ matrix.spark_version }} -am
