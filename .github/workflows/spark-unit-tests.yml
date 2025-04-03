@@ -3,8 +3,10 @@ name: Build and Run Spark Unit Tests
 on:
   push:
     branches:
-      - 'main'
+      - main
   pull_request:
+    branches:
+      - "**"
     paths-ignore:
       - '.gitignore'
       - 'README.md'
