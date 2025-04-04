@@ -22,6 +22,10 @@ on:
       - synchronize
       - ready_for_review
       - reopened
+    paths-ignore:
+      - README.md
+      - LICENSE
+      - .gitignore
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
