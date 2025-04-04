@@ -16,7 +16,11 @@ on:
   # This needs to be a pull_request_target event to allow the workflow to
   # modify labels on the PR.
   pull_request_target:
-    types: [opened, edited, synchronize, reopened]
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}

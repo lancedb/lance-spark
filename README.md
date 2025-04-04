@@ -7,14 +7,14 @@ supporting distributed, parallel scans, and optimizations such as column and fil
 Additionally, Lance provides high-performance random access that is 100 times faster than Parquet 
 without sacrificing scan performance.
 
-By using the Apache Spark Connector for Lance, you can leverage Spark's powerful data processing, SQL querying, 
+By using the Apache Spark Connector for Lance, you can leverage Apache Spark's powerful data processing, SQL querying, 
 and machine learning training capabilities on the AI data lake powered by Lance.
 
 ## Features
 
-The connector is built using the Spark DatasourceV2 API. 
+The connector is built using the Spark DatasourceV2 (DSv2) API. 
 Please check [this presentation](https://www.slideshare.net/databricks/apache-spark-data-source-v2-with-wenchen-fan-and-gengliang-wang)
-to learn more about its features.
+to learn more about DSv2 features.
 Specifically, you can use the Apache Spark Connector for Lance to:
 
 * **Query Lance Datasets**: Seamlessly query datasets stored in the Lance format using Spark.

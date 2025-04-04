@@ -12,7 +12,16 @@
 
 name: Spark Unit Tests
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+      - reopened
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
