@@ -38,6 +38,9 @@ jobs:
         with:
           repository: lancedb/lance
           path: lance
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: lance/java/core/lance-jni
       - name: Checkout lance-spark repo
         uses: actions/checkout@v4
         with:
@@ -48,9 +51,6 @@ jobs:
           distribution: temurin
           java-version: ${{ matrix.java-version }}
           cache: "maven"
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: lance/java/core/lance-jni
       - name: Install Lance Java SDK
         working-directory: lance/java
         run: |

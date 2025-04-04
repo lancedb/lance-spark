@@ -1,4 +1,4 @@
-name: PR Checks
+name: PR Title Checks
 
 on:
   # This needs to be a pull_request_target event to allow the workflow to
