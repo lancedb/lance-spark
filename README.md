@@ -124,3 +124,25 @@ Use the `shade-jar` profile to create the jar with all dependencies for Spark 3.
 ```shell
 ./mvnw clean install -Pspark-3.4 -Pshade-jar -pl lance-spark-3.4 -am
 ```
+
+### Styling Guide
+
+We use checkstyle and spotless to lint the code.
+
+To verify checkstyle:
+
+```shell
+./mvnw checkstyle:check
+```
+
+To verify spotless:
+
+```shell
+./mvnw spotless:check
+```
+
+To apply spotless changes:
+
+```shell
+./mvnw spotless:apply
+```

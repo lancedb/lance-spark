@@ -1,3 +1,15 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 name: PR Title Checks
 
 on:
@@ -22,30 +34,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           fail_on_error: true
-  breaking-change-checker:
-    name: Validate breaking change policy
-    runs-on: ubuntu-latest
-    # Make sure we add any labels to this PR first.
-    needs: labeler
-    steps:
-      # For security reasons, we check out the base branch to use it's CI scripts.
-      - uses: actions/checkout@v4
-        with:
-          path: base
-      - uses: actions/checkout@v4
-        with:
-          # pull_request_target checks out the base branch by default, not
-          # the PR branch.
-          ref: "${{ github.event.pull_request.head.sha }}"
-          path: pr
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install PyGithub
-      - env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        working-directory: pr
-        run: python ../base/ci/check_versions.py
   commitlint:
     permissions:
       pull-requests: write

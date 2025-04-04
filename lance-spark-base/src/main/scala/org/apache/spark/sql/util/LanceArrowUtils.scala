@@ -24,6 +24,7 @@ package org.apache.spark.sql.util
  */
 
 import com.lancedb.lance.spark.LanceConstant
+
 import org.apache.arrow.vector.complex.MapVector
 import org.apache.arrow.vector.types.{DateUnit, FloatingPointPrecision, IntervalUnit, TimeUnit}
 import org.apache.arrow.vector.types.pojo.{ArrowType, Field, FieldType, Schema}
@@ -32,6 +33,7 @@ import org.apache.spark.sql.types._
 
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.collection.JavaConverters._
 
 object LanceArrowUtils {
@@ -190,7 +192,8 @@ object LanceArrowUtils {
   }
 
   /* Copy from copy of org.apache.spark.sql.errors.ExecutionErrors for Spark version compatibility */
-  private def duplicatedFieldNameInArrowStructError(fieldNames: Seq[String]): SparkUnsupportedOperationException = {
+  private def duplicatedFieldNameInArrowStructError(fieldNames: Seq[String])
+      : SparkUnsupportedOperationException = {
     new SparkUnsupportedOperationException(
       errorClass = "DUPLICATED_FIELD_NAME_IN_ARROW_STRUCT",
       messageParameters = Map("fieldNames" -> fieldNames.mkString("[", ", ", "]")))

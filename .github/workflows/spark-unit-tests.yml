@@ -1,3 +1,15 @@
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 name: Spark Unit Tests
 
 on: [push, pull_request]
@@ -76,6 +88,31 @@ jobs:
             -Dio.netty.tryReflectionSetAccessible=true"
           fi
           mvn clean install -pl :lance-core -DskipTests -am
+      - name: Check code style
+        working-directory: lance-spark
+        run: |
+          if [ "${{ matrix.java-version }}" == "17" ]; then
+            export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS \
+            -XX:+IgnoreUnrecognizedVMOptions \
+            --add-opens=java.base/java.lang=ALL-UNNAMED \
+            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
+            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
+            --add-opens=java.base/java.io=ALL-UNNAMED \
+            --add-opens=java.base/java.net=ALL-UNNAMED \
+            --add-opens=java.base/java.nio=ALL-UNNAMED \
+            --add-opens=java.base/java.util=ALL-UNNAMED \
+            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
+            --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
+            --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED \
+            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
+            --add-opens=java.base/sun.nio.cs=ALL-UNNAMED \
+            --add-opens=java.base/sun.security.action=ALL-UNNAMED \
+            --add-opens=java.base/sun.util.calendar=ALL-UNNAMED \
+            --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED \
+            -Djdk.reflect.useDirectMethodHandle=false \
+            -Dio.netty.tryReflectionSetAccessible=true"
+          fi
+          mvn checkstyle:check spotless:check
       - name: Running tests with Java ${{ matrix.java-version }} Scala ${{ matrix.scala-version }} for Spark ${{ matrix.spark-version }}
         working-directory: lance-spark
         run: |
