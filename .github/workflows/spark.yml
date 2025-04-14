@@ -10,7 +10,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Spark Unit Tests
+name: Spark
 
 on:
   push:
@@ -54,18 +54,25 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y protobuf-compiler libssl-dev
+      # pin the toolchain version to avoid surprises
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      - uses: rui314/setup-mold@v1
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
       - name: Checkout lance repo
         uses: actions/checkout@v4
         with:
           repository: lancedb/lance
           path: lance
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: lance/java/core/lance-jni
       - name: Checkout lance-spark repo
         uses: actions/checkout@v4
         with:
           path: lance-spark
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: lance/java/core/lance-jni -> ../target/rust-maven-plugin/lance-jni
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -96,7 +103,7 @@ jobs:
             -Djdk.reflect.useDirectMethodHandle=false \
             -Dio.netty.tryReflectionSetAccessible=true"
           fi
-          mvn clean install -pl :lance-core -DskipTests -am
+          mvn install -pl :lance-core -DskipTests -am
       - name: Check code style
         working-directory: lance-spark
         run: |
@@ -146,4 +153,4 @@ jobs:
             -Djdk.reflect.useDirectMethodHandle=false \
             -Dio.netty.tryReflectionSetAccessible=true"
           fi
-          mvn clean install -Pspark-${{ matrix.spark-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }} -am
+          mvn install -Pspark-${{ matrix.spark-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }} -am
