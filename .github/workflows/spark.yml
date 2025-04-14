@@ -103,7 +103,7 @@ jobs:
             -Djdk.reflect.useDirectMethodHandle=false \
             -Dio.netty.tryReflectionSetAccessible=true"
           fi
-          mvn clean install -pl :lance-core -DskipTests -am
+          mvn install -pl :lance-core -DskipTests -am
       - name: Check code style
         working-directory: lance-spark
         run: |
@@ -153,4 +153,4 @@ jobs:
             -Djdk.reflect.useDirectMethodHandle=false \
             -Dio.netty.tryReflectionSetAccessible=true"
           fi
-          mvn clean install -Pspark-${{ matrix.spark-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }} -am
+          mvn install -Pspark-${{ matrix.spark-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }} -am
