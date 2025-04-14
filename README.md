@@ -26,8 +26,11 @@ Specifically, you can use the Apache Spark Connector for Lance to:
 ### Requirements
 
 Java: 8, 11, 17
+
 Scala: 2.12
+
 Spark: 3.4, 3.5
+
 Operating System: Linux x86, macOS
 
 ### Download jar
@@ -76,7 +79,7 @@ More examples can be found in [SparkLanceConnectorReadTest](/lance-spark-base/sr
 This package is dependent on the Lance Java SDK.
 You need to follow [its guide](https://github.com/lancedb/lance/blob/main/java/README.md) to first build it locally.
 If your have changes affecting both repositories,
-the PR in `lance-spark` will only pass CI after the PR in `lance` is merged.
+the PR in `lancedb/lance-spark` will only pass CI after the PR in `lancedb/lance` is merged.
 
 ### Build Commands
 
