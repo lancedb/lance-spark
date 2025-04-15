@@ -76,10 +76,11 @@ More examples can be found in [SparkLanceConnectorReadTest](/lance-spark-base/sr
 
 ### Lance Java SDK Dependency
 
-This package is dependent on the Lance Java SDK.
-You need to follow [its guide](https://github.com/lancedb/lance/blob/main/java/README.md) to first build it locally.
-If your have changes affecting both repositories,
-the PR in `lancedb/lance-spark` will only pass CI after the PR in `lancedb/lance` is merged.
+This package is dependent on the [Lance Java SDK](https://github.com/lancedb/lance/blob/main/java) and 
+[Lance Catalog Java Modules](https://github.com/lancedb/lance-catalog/tree/main/java).
+You need to build those repositories locally first before building this repository.
+If your have changes affecting those repositories,
+the PR in `lancedb/lance-spark` will only pass CI after the PRs in `lancedb/lance` and `lance/lance-catalog` are merged.
 
 ### Build Commands
 
