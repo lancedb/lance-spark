@@ -69,8 +69,8 @@ jobs:
       - name: Checkout lance-catalog repo
         uses: actions/checkout@v4
         with:
-          repository: lancedb/lance
-          path: lance
+          repository: lancedb/lance-catalog
+          path: lance-catalog
       - name: Checkout lance-spark repo
         uses: actions/checkout@v4
         with:
