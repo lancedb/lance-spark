@@ -133,7 +133,7 @@ jobs:
             -Djdk.reflect.useDirectMethodHandle=false \
             -Dio.netty.tryReflectionSetAccessible=true"
           fi
-          mvn install -pl :lance-core -DskipTests -am
+          mvn install -DskipTests
       - name: Check code style
         working-directory: lance-spark
         run: |
