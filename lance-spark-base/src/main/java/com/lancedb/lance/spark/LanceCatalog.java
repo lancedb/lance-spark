@@ -14,13 +14,23 @@
 package com.lancedb.lance.spark;
 
 import com.lancedb.lance.WriteParams;
+import com.lancedb.lance.catalog.client.apache.ApiClient;
+import com.lancedb.lance.catalog.client.apache.ApiException;
+import com.lancedb.lance.catalog.client.apache.Configuration;
+import com.lancedb.lance.catalog.client.apache.api.DefaultApi;
+import com.lancedb.lance.catalog.client.apache.api.NamespaceApi;
+import com.lancedb.lance.catalog.client.apache.model.CreateNamespaceRequest;
 import com.lancedb.lance.spark.internal.LanceDatasetAdapter;
 import com.lancedb.lance.spark.utils.Optional;
 
+import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
+import org.apache.spark.sql.catalyst.analysis.NonEmptyNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
 import org.apache.spark.sql.connector.catalog.Identifier;
+import org.apache.spark.sql.connector.catalog.NamespaceChange;
+import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.TableChange;
@@ -31,8 +41,57 @@ import scala.Some;
 
 import java.util.Map;
 
-public class LanceCatalog implements TableCatalog {
+public class LanceCatalog implements TableCatalog, SupportsNamespaces {
   private CaseInsensitiveStringMap options;
+
+  private NamespaceApi namespaceApi;
+
+  @Override
+  public void createNamespace(String[] namespace, Map<String, String> metadata) throws NamespaceAlreadyExistsException {
+    CreateNamespaceRequest request = new CreateNamespaceRequest();
+    request.setName(namespace[0]);
+    String mode = metadata.getOrDefault("mode", "CREATE");
+    request.setMode(CreateNamespaceRequest.ModeEnum.valueOf(mode));
+    request.setOptions(metadata);
+    try {
+      namespaceApi.createNamespace(request);
+    } catch (ApiException e) {
+      if (e.getCode() == 400) {
+        throw new NamespaceAlreadyExistsException(namespace);
+      }
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void alterNamespace(String[] namespace, NamespaceChange... changes) throws NoSuchNamespaceException {
+    throw new UnsupportedOperationException("alterNamespace is not supported");
+  }
+
+  @Override
+  public boolean dropNamespace(String[] namespace, boolean cascade) throws NoSuchNamespaceException, NonEmptyNamespaceException {
+    throw new UnsupportedOperationException("dropNamespace is not supported");
+  }
+
+  @Override
+  public String[][] listNamespaces() throws NoSuchNamespaceException {
+    throw new UnsupportedOperationException("listNamespaces is not supported");
+  }
+
+  @Override
+  public String[][] listNamespaces(String[] namespace) throws NoSuchNamespaceException {
+    throw new UnsupportedOperationException("listNamespaces is not supported");
+  }
+
+  @Override
+  public Map<String, String> loadNamespaceMetadata(String[] namespace) throws NoSuchNamespaceException {
+    throw new UnsupportedOperationException("loadNamespaceMetadata is not supported");
+  }
+
+  @Override
+  public boolean namespaceExists(String[] namespace) {
+    throw new UnsupportedOperationException("namespaceExists is not supported");
+  }
 
   @Override
   public Identifier[] listTables(String[] namespace) throws NoSuchNamespaceException {
@@ -84,6 +143,9 @@ public class LanceCatalog implements TableCatalog {
   @Override
   public void initialize(String name, CaseInsensitiveStringMap options) {
     this.options = options;
+    ApiClient defaultClient = Configuration.getDefaultApiClient();
+    defaultClient.setBasePath("http://localhost:2333");
+    this.namespaceApi = new NamespaceApi(defaultClient);
   }
 
   @Override
