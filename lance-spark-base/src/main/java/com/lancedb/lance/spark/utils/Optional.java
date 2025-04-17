@@ -17,7 +17,13 @@ import java.io.Serializable;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
+/**
+ * An optional implementation that is serializable
+ *
+ * @param <T>
+ */
 public class Optional<T> implements Serializable {
   private static final long serialVersionUID = 1L;
   private final T value;
@@ -60,6 +66,15 @@ public class Optional<T> implements Serializable {
   public void ifPresent(Consumer<? super T> action) {
     if (value != null) {
       action.accept(value);
+    }
+  }
+
+  public <U> Optional<U> map(Function<? super T, ? extends U> mapper) {
+    Objects.requireNonNull(mapper);
+    if (isEmpty()) {
+      return empty();
+    } else {
+      return ofNullable(mapper.apply(value));
     }
   }
 
