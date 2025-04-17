@@ -52,6 +52,8 @@ public abstract class SparkConnectorWriteTestBase {
             .appName("spark-lance-connector-test")
             .master("local")
             .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceCatalog")
+            .config("spark.sql.catalog.lance.type", "dir")
+            .config("spark.sql.catalog.lance.path", dbPath.toAbsolutePath().toString())
             .config("spark.sql.catalog.lance.max_row_per_file", "1")
             .getOrCreate();
     StructType schema =

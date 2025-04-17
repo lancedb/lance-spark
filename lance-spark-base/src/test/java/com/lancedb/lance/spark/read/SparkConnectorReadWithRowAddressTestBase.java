@@ -37,13 +37,16 @@ public abstract class SparkConnectorReadWithRowAddressTestBase {
 
   @BeforeAll
   static void setup() {
+    dbPath = TestUtils.TestTable1Config.dbPath;
     spark =
         SparkSession.builder()
             .appName("spark-lance-connector-test")
             .master("local")
             .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceCatalog")
+            .config("spark.sql.catalog.lance.type", "dir")
+            .config("spark.sql.catalog.lance.path", dbPath)
             .getOrCreate();
-    dbPath = TestUtils.TestTable1Config.dbPath;
+
     data =
         spark
             .read()

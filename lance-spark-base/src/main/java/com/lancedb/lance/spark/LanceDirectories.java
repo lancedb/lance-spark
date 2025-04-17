@@ -13,8 +13,12 @@
  */
 package com.lancedb.lance.spark;
 
+import com.lancedb.lance.WriteParams;
+import com.lancedb.lance.spark.internal.LanceDatasetAdapter;
+import com.lancedb.lance.spark.utils.Optional;
 import com.lancedb.lance.spark.utils.PropertyUtils;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -29,108 +33,130 @@ import org.apache.spark.sql.connector.catalog.TableChange;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
+import scala.Some;
 
 import java.util.Map;
 
-public class LanceCatalog implements TableCatalog, SupportsNamespaces {
+/**
+ * A Spark catalog wrapper over Lance directories. User can configure a directory to be accessed
+ * through the default namespace, or configure a mapping of Spark namespace to directory path in
+ * order to access multiple directories.
+ */
+public class LanceDirectories implements TableCatalog, SupportsNamespaces {
 
-  public static final String CATALOG_TYPE = "type";
-  public static final String CATALOG_TYPE_DIR = "dir";
-  public static final String CATALOG_TYPE_REST = "rest";
+  public static final String CATALOG_PROPERTY_PATH = "path";
+  public static final String CATALOG_PROPERTY_PATHS_PREFIX = "paths.";
+  public static final String DEFAULT_NAMESPACE = "default";
+  public static final String NS_PROPERTY_PATH = "path";
 
-  private TableCatalog catalog;
-  private SupportsNamespaces namespaces;
+  private String name;
+  private Map<String, String> options;
+  private Map<String, String> nsToPath;
 
   @Override
   public void createNamespace(String[] namespace, Map<String, String> metadata)
       throws NamespaceAlreadyExistsException {
-    namespaces.createNamespace(namespace, metadata);
+    throw new UnsupportedOperationException("createNamespace is not supported");
   }
 
   @Override
   public void alterNamespace(String[] namespace, NamespaceChange... changes)
       throws NoSuchNamespaceException {
-    namespaces.alterNamespace(namespace, changes);
+    throw new UnsupportedOperationException("alterNamespace is not supported");
   }
 
   @Override
   public boolean dropNamespace(String[] namespace, boolean cascade)
       throws NoSuchNamespaceException, NonEmptyNamespaceException {
-    return namespaces.dropNamespace(namespace, cascade);
+    throw new UnsupportedOperationException("dropNamespace is not supported");
   }
 
   @Override
   public String[][] listNamespaces() throws NoSuchNamespaceException {
-    return namespaces.listNamespaces();
+    return nsToPath.keySet().toArray(new String[0][]);
   }
 
   @Override
   public String[][] listNamespaces(String[] namespace) throws NoSuchNamespaceException {
-    return namespaces.listNamespaces(namespace);
+    throw new UnsupportedOperationException(
+        "listNamespaces with a parent namespace is not supported");
   }
 
   @Override
   public Map<String, String> loadNamespaceMetadata(String[] namespace)
       throws NoSuchNamespaceException {
-    return namespaces.loadNamespaceMetadata(namespace);
-  }
-
-  @Override
-  public boolean namespaceExists(String[] namespace) {
-    return namespaces.namespaceExists(namespace);
+    String lanceNs = SparkLanceConverter.toLanceNamespace(namespace);
+    if (!nsToPath.containsKey(lanceNs)) {
+      throw new NoSuchNamespaceException(namespace);
+    }
+    return ImmutableMap.of(NS_PROPERTY_PATH, nsToPath.get(lanceNs));
   }
 
   @Override
   public Identifier[] listTables(String[] namespace) throws NoSuchNamespaceException {
-    return catalog.listTables(namespace);
+    throw new UnsupportedOperationException("listTables is not supported");
   }
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
-    return catalog.loadTable(ident);
+    LanceConfig config = LanceConfig.from(options, ident.name());
+    Optional<StructType> schema = LanceDatasetAdapter.getSchema(config);
+    if (schema.isEmpty()) {
+      throw new NoSuchTableException(config.getDbPath(), config.getDatasetName());
+    }
+    return new LanceDataset(config, schema.get());
   }
 
   @Override
   public Table createTable(
       Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
       throws TableAlreadyExistsException, NoSuchNamespaceException {
-    return catalog.createTable(ident, schema, partitions, properties);
+    try {
+      LanceConfig config = LanceConfig.from(options, ident.name());
+      WriteParams params = SparkOptions.genWriteParamsFromConfig(config);
+      LanceDatasetAdapter.createDataset(ident.name(), schema, params);
+    } catch (IllegalArgumentException e) {
+      throw new TableAlreadyExistsException(ident.name(), new Some<>(e));
+    }
+    return new LanceDataset(LanceConfig.from(options, ident.name()), schema);
   }
 
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
-    return catalog.alterTable(ident, changes);
+    throw new UnsupportedOperationException("alterTable is not supported");
   }
 
   @Override
   public boolean dropTable(Identifier ident) {
-    return catalog.dropTable(ident);
+    LanceConfig config = LanceConfig.from(options, ident.name());
+    LanceDatasetAdapter.dropDataset(config);
+    return true;
   }
 
   @Override
   public void renameTable(Identifier oldIdent, Identifier newIdent)
       throws NoSuchTableException, TableAlreadyExistsException {
-    catalog.renameTable(oldIdent, newIdent);
+    throw new UnsupportedOperationException("renameTable is not supported");
   }
 
   @Override
   public void initialize(String name, CaseInsensitiveStringMap options) {
-    String catalogType = PropertyUtils.propertyAsString(options, CATALOG_TYPE);
-    if (catalogType.equals(CATALOG_TYPE_DIR)) {
-      this.catalog = new LanceDirectories();
-      catalog.initialize(name, options);
-      this.namespaces = null;
-    } else if (catalogType.equals(CATALOG_TYPE_REST)) {
-      this.catalog = new LanceRestCatalog();
-      catalog.initialize(name, options);
-      this.namespaces = null;
-    } else {
-      throw new UnsupportedOperationException("Unknown catalog type: " + catalogType);
+    this.name = name;
+    this.options = options;
+    this.nsToPath = PropertyUtils.propertiesWithPrefix(options, CATALOG_PROPERTY_PATHS_PREFIX);
+    if (nsToPath.isEmpty()) {
+      String path = PropertyUtils.propertyAsString(options, CATALOG_PROPERTY_PATH);
+      this.nsToPath = ImmutableMap.of(DEFAULT_NAMESPACE, path);
     }
   }
 
   @Override
+  public String[] defaultNamespace() {
+    return new String[] {DEFAULT_NAMESPACE};
+  }
+
+  @Override
   public String name() {
-    return catalog.name();
+    return name;
   }
 }

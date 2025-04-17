@@ -13,6 +13,12 @@
  */
 package com.lancedb.lance.spark;
 
+import com.lancedb.lance.catalog.client.apache.ApiClient;
+import com.lancedb.lance.catalog.client.apache.ApiException;
+import com.lancedb.lance.catalog.client.apache.Configuration;
+import com.lancedb.lance.catalog.client.apache.api.NamespaceApi;
+import com.lancedb.lance.catalog.client.apache.model.CreateNamespaceRequest;
+import com.lancedb.lance.spark.utils.Optional;
 import com.lancedb.lance.spark.utils.PropertyUtils;
 
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
@@ -32,105 +38,119 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.Map;
 
-public class LanceCatalog implements TableCatalog, SupportsNamespaces {
+public class LanceRestCatalog implements TableCatalog, SupportsNamespaces {
 
-  public static final String CATALOG_TYPE = "type";
-  public static final String CATALOG_TYPE_DIR = "dir";
-  public static final String CATALOG_TYPE_REST = "rest";
+  public static final String CATALOG_PROPERTY_URI = "uri";
+  public static final String CATALOG_PROPERTY_NS_CREATE_MODE = "ns.create-mode";
+  public static final String CATALOG_PROPERTY_NS_CREATE_MODE_DEFAULT = "CREATE";
 
-  private TableCatalog catalog;
-  private SupportsNamespaces namespaces;
+  private String name;
+  private Optional<CreateNamespaceRequest.ModeEnum> nsCreateMode;
+  private NamespaceApi namespaceApi;
 
   @Override
   public void createNamespace(String[] namespace, Map<String, String> metadata)
       throws NamespaceAlreadyExistsException {
-    namespaces.createNamespace(namespace, metadata);
+    CreateNamespaceRequest request = new CreateNamespaceRequest();
+    request.setName(SparkLanceConverter.toLanceNamespace(namespace));
+
+    if (nsCreateMode.isPresent()) {
+      request.setMode(nsCreateMode.get());
+    }
+
+    request.setOptions(metadata);
+
+    try {
+      namespaceApi.createNamespace(request);
+    } catch (ApiException e) {
+      if (e.getCode() == 400) {
+        throw new NamespaceAlreadyExistsException(namespace);
+      }
+      throw new RestApiException(e);
+    }
   }
 
   @Override
   public void alterNamespace(String[] namespace, NamespaceChange... changes)
       throws NoSuchNamespaceException {
-    namespaces.alterNamespace(namespace, changes);
+    throw new UnsupportedOperationException("alterNamespace is not supported");
   }
 
   @Override
   public boolean dropNamespace(String[] namespace, boolean cascade)
       throws NoSuchNamespaceException, NonEmptyNamespaceException {
-    return namespaces.dropNamespace(namespace, cascade);
+    throw new UnsupportedOperationException("dropNamespace is not supported");
   }
 
   @Override
   public String[][] listNamespaces() throws NoSuchNamespaceException {
-    return namespaces.listNamespaces();
+    throw new UnsupportedOperationException("listNamespaces is not supported");
   }
 
   @Override
   public String[][] listNamespaces(String[] namespace) throws NoSuchNamespaceException {
-    return namespaces.listNamespaces(namespace);
+    throw new UnsupportedOperationException("listNamespaces is not supported");
   }
 
   @Override
   public Map<String, String> loadNamespaceMetadata(String[] namespace)
       throws NoSuchNamespaceException {
-    return namespaces.loadNamespaceMetadata(namespace);
+    throw new UnsupportedOperationException("loadNamespaceMetadata is not supported");
   }
 
   @Override
   public boolean namespaceExists(String[] namespace) {
-    return namespaces.namespaceExists(namespace);
+    throw new UnsupportedOperationException("namespaceExists is not supported");
   }
 
   @Override
   public Identifier[] listTables(String[] namespace) throws NoSuchNamespaceException {
-    return catalog.listTables(namespace);
+    throw new UnsupportedOperationException("listTables is not supported");
   }
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
-    return catalog.loadTable(ident);
+    throw new UnsupportedOperationException("loadTable is not supported");
   }
 
   @Override
   public Table createTable(
       Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
       throws TableAlreadyExistsException, NoSuchNamespaceException {
-    return catalog.createTable(ident, schema, partitions, properties);
+    throw new UnsupportedOperationException("createTable is not supported");
   }
 
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
-    return catalog.alterTable(ident, changes);
+    throw new UnsupportedOperationException("alterTable is not supported");
   }
 
   @Override
   public boolean dropTable(Identifier ident) {
-    return catalog.dropTable(ident);
+    throw new UnsupportedOperationException("dropTable is not supported");
   }
 
   @Override
   public void renameTable(Identifier oldIdent, Identifier newIdent)
       throws NoSuchTableException, TableAlreadyExistsException {
-    catalog.renameTable(oldIdent, newIdent);
+    throw new UnsupportedOperationException("renameTable is not supported");
   }
 
   @Override
   public void initialize(String name, CaseInsensitiveStringMap options) {
-    String catalogType = PropertyUtils.propertyAsString(options, CATALOG_TYPE);
-    if (catalogType.equals(CATALOG_TYPE_DIR)) {
-      this.catalog = new LanceDirectories();
-      catalog.initialize(name, options);
-      this.namespaces = null;
-    } else if (catalogType.equals(CATALOG_TYPE_REST)) {
-      this.catalog = new LanceRestCatalog();
-      catalog.initialize(name, options);
-      this.namespaces = null;
-    } else {
-      throw new UnsupportedOperationException("Unknown catalog type: " + catalogType);
-    }
+    this.name = name;
+    String uri = PropertyUtils.propertyAsString(options, CATALOG_PROPERTY_URI);
+    this.nsCreateMode =
+        PropertyUtils.propertyAsOptionalString(options, CATALOG_PROPERTY_NS_CREATE_MODE)
+            .map(CreateNamespaceRequest.ModeEnum::valueOf);
+
+    ApiClient client = Configuration.getDefaultApiClient();
+    client.setBasePath(uri);
+    this.namespaceApi = new NamespaceApi(client);
   }
 
   @Override
   public String name() {
-    return catalog.name();
+    return name;
   }
 }
