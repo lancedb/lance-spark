@@ -183,4 +183,4 @@ jobs:
             -Djdk.reflect.useDirectMethodHandle=false \
             -Dio.netty.tryReflectionSetAccessible=true"
           fi
-          mvn install -Pspark-${{ matrix.spark-version }}_${{ matrix.scala-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }} -am
+          mvn install -Pspark-${{ matrix.spark-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }}_${{ matrix.scala-version }} -am
