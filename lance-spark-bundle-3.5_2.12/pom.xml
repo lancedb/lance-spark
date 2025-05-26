@@ -26,7 +26,7 @@
         </dependency>
         <dependency>
             <groupId>com.lancedb</groupId>
-            <artifactId>lance-spark-${spark35.compat.version}_${scala.compat.version}</artifactId>
+            <artifactId>lance-spark-3.5_2.12</artifactId>
             <version>${lance-spark.version}</version>
         </dependency>
     </dependencies>
