@@ -55,7 +55,7 @@
     <properties>
         <lance-spark.version>0.1.0</lance-spark.version>
         <lance.version>0.25.3</lance.version>
-        <lance-catalog.version>0.0.1</lance-catalog.version>
+        <lance-namespace.version>0.0.1</lance-namespace.version>
 
         <spark34.version>3.4.4</spark34.version>
         <spark35.version>3.5.5</spark35.version>
@@ -141,8 +141,8 @@
         </dependency>
         <dependency>
             <groupId>com.lancedb</groupId>
-            <artifactId>lance-catalog-apache-client</artifactId>
-            <version>${lance-catalog.version}</version>
+            <artifactId>lance-namespace-apache-client</artifactId>
+            <version>${lance-namespace.version}</version>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
