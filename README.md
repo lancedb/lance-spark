@@ -47,7 +47,7 @@ The connector packages are published to Maven Central under `com.lancedb` namesp
 Launch `spark-shell` with your selected JAR according to your Spark and Scala version:
 
 ```shell
-spark-shell --packages com.lancedb.lance:lance-spark-bundle-3.5_2.12:0.1.0
+spark-shell --packages com.lancedb.lance:lance-spark-bundle-3.5_2.12:0.0.1
 ```
 
 Example Usage:
