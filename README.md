@@ -29,7 +29,7 @@ Specifically, you can use the Apache Spark Connector for Lance to:
 |-------------|--------------------------------------------|
 | Java        | 8, 11, 17                                  |
 | Scala       | 2.12                                       |
-| Spark       | 3.4, 3.5                                   |
+| Spark       | 3.5                                        |
 | OS          | Any OS that is supported by Lance Java SDK |
 
 ### Maven Central
