@@ -6,7 +6,7 @@ on:
     types: [released]
   pull_request:
     paths:
-      - publish.yml
+      - .github/workflows/publish.yml
   workflow_dispatch:
     inputs:
       mode:
