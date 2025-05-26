@@ -117,7 +117,8 @@
         <module>lance-spark-base_2.12</module>
         <module>lance-spark-3.5_2.12</module>
         <module>lance-spark-bundle-3.5_2.12</module>
-<!--        <module>lance-spark-3.4_2.12</module>-->
+        <module>lance-spark-3.4_2.12</module>
+        <module>lance-spark-bundle-3.4_2.12</module>
     </modules>
 
     <dependencyManagement>

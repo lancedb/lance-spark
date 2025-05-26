@@ -1,0 +1,73 @@
+name: Build and publish Java packages
+on:
+  release:
+    # Use released instead of published, since we don't publish preview/beta
+    # versions
+    types: [released]
+  pull_request:
+    paths:
+      - publish.yml
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Release mode'
+        required: true
+        type: choice
+        default: dry_run
+        options:
+          - dry_run
+          - release
+      ref:
+        description: 'The branch, tag or SHA to checkout'
+        required: false
+        type: string
+
+jobs:
+  release:
+    name: Release Spark ${{ matrix.scala-version }} with Scala ${{ matrix.scala-version }}
+    strategy:
+      matrix:
+        scala-version: [ 2.12 ]
+        spark-version: [ 3.4, 3.5 ]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      - name: Set up Java 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: corretto
+          java-version: 8
+          cache: "maven"
+          server-id: ossrh
+          server-username: SONATYPE_USER
+          server-password: SONATYPE_TOKEN
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Set github
+        run: |
+          git config --global user.email "Lance Github Runner"
+          git config --global user.name "dev+gha@lancedb.com"
+      - name: Dry run
+        if: |
+          github.event_name == 'pull_request' ||
+          inputs.mode == 'dry_run'
+        working-directory: java
+        run: |
+          mvn --batch-mode -DskipTests package
+      - name: Publish with Java 8
+        if: |
+          github.event_name == 'release' ||
+          inputs.mode == 'release'
+        working-directory: java
+        run: |
+          echo "use-agent" >> ~/.gnupg/gpg.conf
+          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+          export GPG_TTY=$(tty)
+          mvn --batch-mode -DskipTests -DpushChanges=false -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} deploy -pl lance-spark-bundle-${{ matrix.scala-version }}_${{ matrix.scala-version }} -P deploy-to-ossrh
+        env:
+          SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
+          SONATYPE_TOKEN: ${{ secrets.SONATYPE_TOKEN }}
