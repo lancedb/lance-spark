@@ -1,4 +1,4 @@
-name: Build and publish Java packages
+name: Publish Spark packages
 on:
   release:
     # Use released instead of published, since we don't publish preview/beta
@@ -6,7 +6,7 @@ on:
     types: [released]
   pull_request:
     paths:
-      - publish.yml
+      - .github/workflows/publish.yml
   workflow_dispatch:
     inputs:
       mode:
@@ -24,11 +24,11 @@ on:
 
 jobs:
   release:
-    name: Release Spark ${{ matrix.scala-version }} with Scala ${{ matrix.scala-version }}
+    name: Release Spark ${{ matrix.spark-version }} with Scala ${{ matrix.scala-version }}
     strategy:
       matrix:
         scala-version: [ 2.12 ]
-        spark-version: [ 3.4, 3.5 ]
+        spark-version: [ 3.5 ]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -55,19 +55,17 @@ jobs:
         if: |
           github.event_name == 'pull_request' ||
           inputs.mode == 'dry_run'
-        working-directory: java
         run: |
-          mvn --batch-mode -DskipTests package
+          mvn --batch-mode -DskipTests package -pl lance-spark-bundle-${{ matrix.spark-version }}_${{ matrix.scala-version }}
       - name: Publish with Java 8
         if: |
           github.event_name == 'release' ||
           inputs.mode == 'release'
-        working-directory: java
         run: |
           echo "use-agent" >> ~/.gnupg/gpg.conf
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
           export GPG_TTY=$(tty)
-          mvn --batch-mode -DskipTests -DpushChanges=false -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} deploy -pl lance-spark-bundle-${{ matrix.scala-version }}_${{ matrix.scala-version }} -P deploy-to-ossrh
+          mvn --batch-mode -DskipTests -DpushChanges=false -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} deploy -pl lance-spark-bundle-${{ matrix.spark-version }}_${{ matrix.scala-version }} -P deploy-to-ossrh
         env:
           SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
           SONATYPE_TOKEN: ${{ secrets.SONATYPE_TOKEN }}
