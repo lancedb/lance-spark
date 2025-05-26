@@ -1,4 +1,4 @@
-name: Build and publish Java packages
+name: Publish Spark packages
 on:
   release:
     # Use released instead of published, since we don't publish preview/beta
@@ -28,7 +28,7 @@ jobs:
     strategy:
       matrix:
         scala-version: [ 2.12 ]
-        spark-version: [ 3.4, 3.5 ]
+        spark-version: [ 3.5 ]
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
@@ -55,14 +55,12 @@ jobs:
         if: |
           github.event_name == 'pull_request' ||
           inputs.mode == 'dry_run'
-        working-directory: java
         run: |
           mvn --batch-mode -DskipTests package
       - name: Publish with Java 8
         if: |
           github.event_name == 'release' ||
           inputs.mode == 'release'
-        working-directory: java
         run: |
           echo "use-agent" >> ~/.gnupg/gpg.conf
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
