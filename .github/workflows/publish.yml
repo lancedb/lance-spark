@@ -5,8 +5,11 @@ on:
     # versions
     types: [released]
   pull_request:
-    paths:
-      - .github/workflows/publish.yml
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+      - reopened
   workflow_dispatch:
     inputs:
       mode:
@@ -56,7 +59,7 @@ jobs:
           github.event_name == 'pull_request' ||
           inputs.mode == 'dry_run'
         run: |
-          mvn --batch-mode -DskipTests package -pl lance-spark-bundle-${{ matrix.spark-version }}_${{ matrix.scala-version }}
+          mvn --batch-mode -DskipTests package -pl lance-spark-bundle-${{ matrix.spark-version }}_${{ matrix.scala-version }} -am
       - name: Publish with Java 8
         if: |
           github.event_name == 'release' ||
@@ -65,7 +68,7 @@ jobs:
           echo "use-agent" >> ~/.gnupg/gpg.conf
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
           export GPG_TTY=$(tty)
-          mvn --batch-mode -DskipTests -DpushChanges=false -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} deploy -pl lance-spark-bundle-${{ matrix.spark-version }}_${{ matrix.scala-version }} -P deploy-to-ossrh
+          mvn --batch-mode -DskipTests -DpushChanges=false -Dgpg.passphrase=${{ secrets.GPG_PASSPHRASE }} deploy -P deploy-to-ossrh -pl lance-spark-bundle-${{ matrix.spark-version }}_${{ matrix.scala-version }} -am
         env:
           SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
           SONATYPE_TOKEN: ${{ secrets.SONATYPE_TOKEN }}
