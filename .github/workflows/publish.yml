@@ -54,6 +54,9 @@ jobs:
         run: |
           git config --global user.email "Lance Github Runner"
           git config --global user.name "dev+gha@lancedb.com"
+      - name: Build
+        run: |
+          mvn install -DskipTests
       - name: Dry run
         if: |
           github.event_name == 'pull_request' ||
