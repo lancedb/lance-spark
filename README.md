@@ -25,30 +25,29 @@ Specifically, you can use the Apache Spark Connector for Lance to:
 
 ### Requirements
 
-Java: 8, 11, 17
+| Requirement | Supported Versions                         |
+|-------------|--------------------------------------------|
+| Java        | 8, 11, 17                                  |
+| Scala       | 2.12                                       |
+| Spark       | 3.4, 3.5                                   |
+| OS          | Any OS that is supported by Lance Java SDK |
 
-Scala: 2.12
+### Maven Central
 
-Spark: 3.4, 3.5
+The connector packages are published to Maven Central under `com.lancedb` namespace:
 
-Operating System: Linux x86, macOS
-
-### Download jar
-
-Jars with full dependency are uploaded in public S3 bucket `spark-lance-artifacts`,
-with name pattern `lance-spark-{spark-version}-{scala-version}-{connector-version}-jar-with-dependencies.jar`.
-FOr example, to get Spark 3.5 Scala 2.12 jar for connector version 0.1.0, do:
-
-```shell
-wget https://spark-lance-artifacts.s3.amazonaws.com/lance-spark-3.5-2.12-0.1.0-jar-with-dependencies.jar
-```
+| Artifact Type | Name Pattern                                         | Description                                                                                                                                     | Example                     |
+|---------------|------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------|
+| Base Jar      | `lance-spark-base_<scala_version>`                   | Jar with logic shared by different versions of Spark Lance connectors, only intended for internal use.                                          | lance-spark-base_2.12       |
+| Lean Jar      | `lance-spark-<spark-version>_<scala_version>`        | Jar with only the Spark Lance connector logic, suitable for building a Spark application which you will re-bundle later with other dependencies | lance-spark-3.5_2.12        |
+| Bundled Jar   | `lance-spark-bundle-<spark-version>_<scala_version>` | Jar with all necessary non-Spark dependencies, suitable for use directly in a Spark session                                                     | lance-spark-bundle-3.5_2.12 |
 
 ## Quick Start
 
 Launch `spark-shell` with your selected JAR according to your Spark and Scala version:
 
 ```shell
-spark-shell --jars lance-spark-3.5-2.12-0.1.0-jar-with-dependencies.jar
+spark-shell --packages com.lancedb.lance:lance-spark-bundle-3.5_2.12:0.1.0
 ```
 
 Example Usage:

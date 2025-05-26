@@ -14,6 +14,13 @@
     <description>Lance Spark Connector</description>
     <url>https://lancedb.github.io/lance-spark</url>
 
+    <developers>
+        <developer>
+            <name>Lance DB Dev Group</name>
+            <email>dev@lancedb.com</email>
+        </developer>
+    </developers>
+
     <licenses>
         <license>
             <name>Apache-2.0</name>
@@ -47,8 +54,8 @@
 
     <properties>
         <lance-spark.version>0.1.0</lance-spark.version>
-        <lance.version>0.25.3</lance.version>
-        <lance-catalog.version>0.0.1</lance-catalog.version>
+        <lance.version>0.26.1</lance.version>
+        <lance-namespace.version>0.0.1</lance-namespace.version>
 
         <spark34.version>3.4.4</spark34.version>
         <spark35.version>3.5.5</spark35.version>
@@ -107,9 +114,11 @@
     </properties>
 
     <modules>
-        <module>lance-spark-base</module>
-        <module>lance-spark-3.5</module>
-        <module>lance-spark-3.4</module>
+        <module>lance-spark-base_2.12</module>
+        <module>lance-spark-3.5_2.12</module>
+        <module>lance-spark-bundle-3.5_2.12</module>
+        <module>lance-spark-3.4_2.12</module>
+        <module>lance-spark-bundle-3.4_2.12</module>
     </modules>
 
     <dependencyManagement>
@@ -130,11 +139,12 @@
             <artifactId>lance-core</artifactId>
             <version>${lance.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.lancedb</groupId>
-            <artifactId>lance-catalog-apache-client</artifactId>
-            <version>${lance-catalog.version}</version>
-        </dependency>
+<!-- TODO: uncomment after initial release  -->
+<!--        <dependency>-->
+<!--            <groupId>com.lancedb</groupId>-->
+<!--            <artifactId>lance-namespace-apache-client</artifactId>-->
+<!--            <version>${lance-namespace.version}</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -370,6 +380,48 @@
                 <spark.version>${spark35.version}</spark.version>
                 <spark.compat.version>${spark35.compat.version}</spark.compat.version>
             </properties>
+        </profile>
+        <profile>
+            <id>deploy-to-ossrh</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.4.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>ossrh</publishingServerId>
+                            <tokenAuth>true</tokenAuth>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                        <version>1.6.13</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <serverId>ossrh</serverId>
+                            <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                            <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

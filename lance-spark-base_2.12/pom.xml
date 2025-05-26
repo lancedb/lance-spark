@@ -12,7 +12,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>lance-spark-base</artifactId>
+    <artifactId>lance-spark-base_2.12</artifactId>
     <name>${project.artifactId}</name>
     <description>Apache Spark Connector for Lance Shared Base Module</description>
     <packaging>jar</packaging>

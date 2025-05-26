@@ -12,7 +12,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>lance-spark-3.4</artifactId>
+    <artifactId>lance-spark-3.4_2.12</artifactId>
     <name>${project.artifactId}</name>
     <description>Apache Spark 3.4 Connector for Lance</description>
     <packaging>jar</packaging>
@@ -26,12 +26,12 @@
         </dependency>
         <dependency>
             <groupId>com.lancedb</groupId>
-            <artifactId>lance-spark-base</artifactId>
+            <artifactId>lance-spark-base_${scala.compat.version}</artifactId>
             <version>${lance-spark.version}</version>
         </dependency>
         <dependency>
             <groupId>com.lancedb</groupId>
-            <artifactId>lance-spark-base</artifactId>
+            <artifactId>lance-spark-base_${scala.compat.version}</artifactId>
             <version>${lance-spark.version}</version>
             <type>test-jar</type>
             <classifier>tests</classifier>
@@ -42,7 +42,7 @@
     <build>
         <testResources>
             <testResource>
-                <directory>../lance-spark-base/src/test/resources</directory>
+                <directory>../lance-spark-base_2.12/src/test/resources</directory>
             </testResource>
         </testResources>
         <plugins>
@@ -113,76 +113,4 @@
             </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>shade-jar</id>
-            <activation>
-                <activeByDefault>false</activeByDefault>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>${maven-enforcer-plugin.version}</version>
-                        <executions>
-                            <execution>
-                                <id>enforce-property</id>
-                                <goals>
-                                    <goal>enforce</goal>
-                                </goals>
-                                <configuration>
-                                    <rules>
-                                        <requireProperty>
-                                            <property>spark.version</property>
-                                            <message>Spark version is not set to 3.4, please add "-P spark-3.4" in your build command</message>
-                                            <regex>^3\.4\.\d+$</regex>
-                                        </requireProperty>
-                                        <requireProperty>
-                                            <property>spark.compat.version</property>
-                                            <message>Spark version is not set to 3.4, please add "-P spark-3.4" in your build command</message>
-                                            <regex>^3\.4$</regex>
-                                        </requireProperty>
-                                    </rules>
-                                    <fail>true</fail>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-shade-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>uber-jar</id>
-                                <goals>
-                                    <goal>shade</goal>
-                                </goals>
-                                <phase>package</phase>
-                                <configuration>
-                                    <finalName>${project.artifactId}-${spark.compat.version}-${scala.compat.version}-${project.version}-jar-with-dependencies</finalName>
-                                    <transformers>
-                                        <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                        <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer"/>
-                                        <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
-                                    </transformers>
-                                    <filters>
-                                        <filter>
-                                            <artifact>*:*</artifact>
-                                            <excludes>
-                                                <exclude>LICENSE</exclude>
-                                                <exclude>META-INF/*.SF</exclude>
-                                                <exclude>META-INF/*.DSA</exclude>
-                                                <exclude>META-INF/*.RSA</exclude>
-                                            </excludes>
-                                        </filter>
-                                    </filters>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

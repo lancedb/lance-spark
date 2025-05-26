@@ -50,92 +50,14 @@ jobs:
         scala-version: [ 2.12 ]
         spark-version: [ 3.4, 3.5 ]
     steps:
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y protobuf-compiler libssl-dev
-      # pin the toolchain version to avoid surprises
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: stable
-      - uses: rui314/setup-mold@v1
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-      - name: Checkout lance repo
-        uses: actions/checkout@v4
-        with:
-          repository: lancedb/lance
-          path: lance
-      - name: Checkout lance-catalog repo
-        uses: actions/checkout@v4
-        with:
-          repository: lancedb/lance-catalog
-          path: lance-catalog
-      - name: Checkout lance-spark repo
-        uses: actions/checkout@v4
-        with:
-          path: lance-spark
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: lance/java/core/lance-jni -> ../target/rust-maven-plugin/lance-jni
+      - uses: actions/checkout@v4
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: ${{ matrix.java-version }}
           cache: "maven"
-      - name: Install Lance Java SDK
-        working-directory: lance/java
-        run: |
-          if [ "${{ matrix.java-version }}" == "17" ]; then
-            export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS \
-            -XX:+IgnoreUnrecognizedVMOptions \
-            --add-opens=java.base/java.lang=ALL-UNNAMED \
-            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
-            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
-            --add-opens=java.base/java.io=ALL-UNNAMED \
-            --add-opens=java.base/java.net=ALL-UNNAMED \
-            --add-opens=java.base/java.nio=ALL-UNNAMED \
-            --add-opens=java.base/java.util=ALL-UNNAMED \
-            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
-            --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
-            --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED \
-            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
-            --add-opens=java.base/sun.nio.cs=ALL-UNNAMED \
-            --add-opens=java.base/sun.security.action=ALL-UNNAMED \
-            --add-opens=java.base/sun.util.calendar=ALL-UNNAMED \
-            --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED \
-            -Djdk.reflect.useDirectMethodHandle=false \
-            -Dio.netty.tryReflectionSetAccessible=true"
-          fi
-          mvn install -pl :lance-core -DskipTests -am
-      - name: Install Lance Catalog Java Packages
-        working-directory: lance-catalog/java
-        run: |
-          if [ "${{ matrix.java-version }}" == "17" ]; then
-            export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS \
-            -XX:+IgnoreUnrecognizedVMOptions \
-            --add-opens=java.base/java.lang=ALL-UNNAMED \
-            --add-opens=java.base/java.lang.invoke=ALL-UNNAMED \
-            --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
-            --add-opens=java.base/java.io=ALL-UNNAMED \
-            --add-opens=java.base/java.net=ALL-UNNAMED \
-            --add-opens=java.base/java.nio=ALL-UNNAMED \
-            --add-opens=java.base/java.util=ALL-UNNAMED \
-            --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
-            --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
-            --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED \
-            --add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
-            --add-opens=java.base/sun.nio.cs=ALL-UNNAMED \
-            --add-opens=java.base/sun.security.action=ALL-UNNAMED \
-            --add-opens=java.base/sun.util.calendar=ALL-UNNAMED \
-            --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED \
-            -Djdk.reflect.useDirectMethodHandle=false \
-            -Dio.netty.tryReflectionSetAccessible=true"
-          fi
-          mvn install -DskipTests
       - name: Check code style
-        working-directory: lance-spark
         run: |
           if [ "${{ matrix.java-version }}" == "17" ]; then
             export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS \
@@ -160,7 +82,6 @@ jobs:
           fi
           mvn checkstyle:check spotless:check
       - name: Running tests with Java ${{ matrix.java-version }} Scala ${{ matrix.scala-version }} for Spark ${{ matrix.spark-version }}
-        working-directory: lance-spark
         run: |
           if [ "${{ matrix.java-version }}" == "17" ]; then
             export JAVA_TOOL_OPTIONS="$JAVA_TOOL_OPTIONS \
@@ -183,4 +104,4 @@ jobs:
             -Djdk.reflect.useDirectMethodHandle=false \
             -Dio.netty.tryReflectionSetAccessible=true"
           fi
-          mvn install -Pspark-${{ matrix.spark-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }} -am
+          mvn install -Pspark-${{ matrix.spark-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }}_${{ matrix.scala-version }} -am
