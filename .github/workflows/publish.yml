@@ -24,7 +24,7 @@ on:
 
 jobs:
   release:
-    name: Release Spark ${{ matrix.scala-version }} with Scala ${{ matrix.scala-version }}
+    name: Release Spark ${{ matrix.spark-version }} with Scala ${{ matrix.scala-version }}
     strategy:
       matrix:
         scala-version: [ 2.12 ]
