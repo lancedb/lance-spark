@@ -5,6 +5,8 @@ on:
     # versions
     types: [released]
   pull_request:
+    paths:
+      - .github/workflows/publish.yml
     types:
       - opened
       - synchronize
