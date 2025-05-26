@@ -139,11 +139,12 @@
             <artifactId>lance-core</artifactId>
             <version>${lance.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.lancedb</groupId>
-            <artifactId>lance-namespace-apache-client</artifactId>
-            <version>${lance-namespace.version}</version>
-        </dependency>
+<!-- TODO: uncomment after initial release  -->
+<!--        <dependency>-->
+<!--            <groupId>com.lancedb</groupId>-->
+<!--            <artifactId>lance-namespace-apache-client</artifactId>-->
+<!--            <version>${lance-namespace.version}</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
