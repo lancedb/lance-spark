@@ -114,7 +114,7 @@ Specifically, you can use the Apache Spark Connector for Lance to:
     ```scala
     spark.read.
         format("lance").
-        load(outputPath).
+        load("/tmp/manual_users.lance").
         show()
     ```
 
