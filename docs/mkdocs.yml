@@ -1,4 +1,4 @@
-site_name: Apache Spark Connector for Lance
+site_name: LANCE-SPARK
 site_description: The Apache Spark Connector for Lance allows Apache Spark to efficiently read datasets stored in Lance format.
 site_url: https://lancedb.github.io/lance-spark/
 docs_dir: src
@@ -63,23 +63,11 @@ extra:
       link: https://twitter.com/lancedb
 
 nav:
-  - Home: index.md
-  - Getting Started:
-    - Installation: getting-started/installation.md
-    - Quick Start: getting-started/quick-start.md
-    - Requirements: getting-started/requirements.md
+  - Welcome: index.md
   - User Guide:
-    - Reading Lance Datasets: user-guide/reading-datasets.md
-    - Writing Lance Datasets: user-guide/writing-datasets.md
-    - Configuration: user-guide/configuration.md
-    - Performance Tuning: user-guide/performance.md
-    - Examples: user-guide/examples.md
-  - Development:
-    - Building from Source: development/building.md
-    - Multi-Version Support: development/multi-version.md
-    - Testing: development/testing.md
-    - Contributing: development/contributing.md
-  - Reference:
-    - API Reference: reference/api.md
-    - Supported Features: reference/features.md
-    - Troubleshooting: reference/troubleshooting.md
+    - Install: user-guide/install.md
+    - Config: user-guide/config.md
+    - Read: user-guide/read.md
+    - Write: user-guide/write.md
+  - Development Guide: dev-guide.md
+  - Lance: https://lancedb.github.io/lance
