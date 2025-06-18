@@ -23,7 +23,7 @@ Specifically, you can use the Apache Spark Connector for Lance to:
 * **Distributed, Parallel Scans**: Leverage Spark's distributed computing capabilities to perform parallel scans on Lance datasets.
 * **Column and Filter Pushdown**: Optimize query performance by pushing down column selections and filters to the data source.
 
-## User Guide
+## User & Development Guide
 
-For the comprehensive user guide, 
+For the comprehensive user and development guide, 
 please visit the documentation website at https://lancedb.github.io/lance-spark.
