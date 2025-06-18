@@ -6,7 +6,7 @@ This package is dependent on the [Lance Java SDK](https://github.com/lancedb/lan
 [Lance Namespace Java Modules](https://github.com/lancedb/lance-namespace/tree/main/java).
 You need to build those repositories locally first before building this repository.
 If your have changes affecting those repositories,
-the PR in `lancedb/lance-spark` will only pass CI after the PRs in `lancedb/lance` and `lance/lance-catalog` are merged.
+the PR in `lancedb/lance-spark` will only pass CI after the PRs in `lancedb/lance` and `lance/lance-namespace` are merged.
 
 ## Build Commands
 
