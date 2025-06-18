@@ -67,7 +67,7 @@ env.bak/
 venv.bak/
 
 # mkdocs documentation
-/site
+/docs/site
 
 # For Spark and Hive
 TempStatsStore/
