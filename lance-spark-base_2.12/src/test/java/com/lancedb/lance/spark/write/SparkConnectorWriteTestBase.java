@@ -57,16 +57,16 @@ public abstract class SparkConnectorWriteTestBase {
     StructType schema =
         new StructType(
             new StructField[] {
-                DataTypes.createStructField("id", DataTypes.IntegerType, false),
-                DataTypes.createStructField("name", DataTypes.StringType, false),
-                DataTypes.createStructField(
-                    "address",
-                    new StructType(new StructField[] {
+              DataTypes.createStructField("id", DataTypes.IntegerType, false),
+              DataTypes.createStructField("name", DataTypes.StringType, false),
+              DataTypes.createStructField(
+                  "address",
+                  new StructType(
+                      new StructField[] {
                         DataTypes.createStructField("city", DataTypes.StringType, true),
                         DataTypes.createStructField("country", DataTypes.StringType, true)
-                    }),
-                    true
-                )
+                      }),
+                  true)
             });
 
     Row row1 = RowFactory.create(1, "Alice", RowFactory.create("Beijing", "China"));
