@@ -58,11 +58,19 @@ public abstract class SparkConnectorWriteTestBase {
         new StructType(
             new StructField[] {
               DataTypes.createStructField("id", DataTypes.IntegerType, false),
-              DataTypes.createStructField("name", DataTypes.StringType, false)
+              DataTypes.createStructField("name", DataTypes.StringType, false),
+              DataTypes.createStructField(
+                  "address",
+                  new StructType(
+                      new StructField[] {
+                        DataTypes.createStructField("city", DataTypes.StringType, true),
+                        DataTypes.createStructField("country", DataTypes.StringType, true)
+                      }),
+                  true)
             });
 
-    Row row1 = RowFactory.create(1, "Alice");
-    Row row2 = RowFactory.create(2, "Bob");
+    Row row1 = RowFactory.create(1, "Alice", RowFactory.create("Beijing", "China"));
+    Row row2 = RowFactory.create(2, "Bob", RowFactory.create("New York", "USA"));
     List<Row> data = Arrays.asList(row1, row2);
 
     testData = spark.createDataFrame(data, schema);
@@ -258,15 +266,19 @@ public abstract class SparkConnectorWriteTestBase {
     assertEquals(iteration, data.filter(col("id").equalTo(1)).count());
     assertEquals(iteration, data.filter(col("id").equalTo(2)).count());
 
-    Dataset<Row> data1 = data.filter(col("id").equalTo(1)).select("name");
-    Dataset<Row> data2 = data.filter(col("id").equalTo(2)).select("name");
+    Dataset<Row> data1 = data.filter(col("id").equalTo(1)).select("name", "address");
+    Dataset<Row> data2 = data.filter(col("id").equalTo(2)).select("name", "address");
 
     for (Row row : data1.collectAsList()) {
       assertEquals("Alice", row.getString(0));
+      assertEquals("Beijing", row.getStruct(1).getString(0));
+      assertEquals("China", row.getStruct(1).getString(1));
     }
 
     for (Row row : data2.collectAsList()) {
       assertEquals("Bob", row.getString(0));
+      assertEquals("New York", row.getStruct(1).getString(0));
+      assertEquals("USA", row.getStruct(1).getString(1));
     }
   }
 
