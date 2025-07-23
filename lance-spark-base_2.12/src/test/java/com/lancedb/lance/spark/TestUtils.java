@@ -72,7 +72,12 @@ public class TestUtils {
       lanceConfig = LanceConfig.from(datasetUri);
       inputPartition =
           new LanceInputPartition(
-              schema, 0, new LanceSplit(Arrays.asList(0, 1)), lanceConfig, Optional.empty());
+              schema,
+              0,
+              new LanceSplit(Arrays.asList(0, 1)),
+              lanceConfig,
+              Optional.empty(),
+              "test");
     }
   }
 }

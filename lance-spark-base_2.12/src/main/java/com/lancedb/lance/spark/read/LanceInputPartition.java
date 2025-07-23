@@ -33,22 +33,7 @@ public class LanceInputPartition implements InputPartition {
   private final Optional<Integer> limit;
   private final Optional<Integer> offset;
   private final Optional<List<ColumnOrdering>> topNSortOrders;
-
-  public LanceInputPartition(
-      StructType schema,
-      int partitionId,
-      LanceSplit lanceSplit,
-      LanceConfig config,
-      Optional<String> whereCondition) {
-    this.schema = schema;
-    this.partitionId = partitionId;
-    this.lanceSplit = lanceSplit;
-    this.config = config;
-    this.whereCondition = whereCondition;
-    this.limit = Optional.empty();
-    this.offset = Optional.empty();
-    this.topNSortOrders = Optional.empty();
-  }
+  private final String scanId;
 
   public LanceInputPartition(
       StructType schema,
@@ -56,16 +41,17 @@ public class LanceInputPartition implements InputPartition {
       LanceSplit lanceSplit,
       LanceConfig config,
       Optional<String> whereCondition,
-      Optional<Integer> limit,
-      Optional<Integer> offset) {
-    this.schema = schema;
-    this.partitionId = partitionId;
-    this.lanceSplit = lanceSplit;
-    this.config = config;
-    this.whereCondition = whereCondition;
-    this.limit = limit;
-    this.offset = offset;
-    this.topNSortOrders = Optional.empty();
+      String scanId) {
+    this(
+        schema,
+        partitionId,
+        lanceSplit,
+        config,
+        whereCondition,
+        Optional.empty(),
+        Optional.empty(),
+        Optional.empty(),
+        scanId);
   }
 
   public LanceInputPartition(
@@ -76,7 +62,8 @@ public class LanceInputPartition implements InputPartition {
       Optional<String> whereCondition,
       Optional<Integer> limit,
       Optional<Integer> offset,
-      Optional<List<ColumnOrdering>> topNSortOrders) {
+      Optional<List<ColumnOrdering>> topNSortOrders,
+      String scanId) {
     this.schema = schema;
     this.partitionId = partitionId;
     this.lanceSplit = lanceSplit;
@@ -85,6 +72,7 @@ public class LanceInputPartition implements InputPartition {
     this.limit = limit;
     this.offset = offset;
     this.topNSortOrders = topNSortOrders;
+    this.scanId = scanId;
   }
 
   public StructType getSchema() {
@@ -117,5 +105,9 @@ public class LanceInputPartition implements InputPartition {
 
   public Optional<List<ColumnOrdering>> getTopNSortOrders() {
     return topNSortOrders;
+  }
+
+  public String getScanId() {
+    return scanId;
   }
 }

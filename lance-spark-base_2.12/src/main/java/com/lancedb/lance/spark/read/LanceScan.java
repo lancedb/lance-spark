@@ -34,6 +34,7 @@ import scala.collection.mutable.HashMap;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.IntStream;
 
 public class LanceScan
@@ -46,6 +47,7 @@ public class LanceScan
   private final Optional<Integer> limit;
   private final Optional<Integer> offset;
   private final Optional<List<ColumnOrdering>> topNSortOrders;
+  private final String scanId = UUID.randomUUID().toString();
 
   public LanceScan(
       StructType schema,
@@ -81,7 +83,8 @@ public class LanceScan
                     whereConditions,
                     limit,
                     offset,
-                    topNSortOrders))
+                    topNSortOrders,
+                    scanId))
         .toArray(InputPartition[]::new);
   }
 

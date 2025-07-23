@@ -34,35 +34,39 @@ import org.apache.spark.sql.types.StructType;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 public class LanceFragmentScanner implements AutoCloseable {
-  private static LoadingCache<LanceConfig, List<Fragment>> LOADING_CACHE =
+  private static LoadingCache<CacheKey, Map<Integer, Fragment>> LOADING_CACHE =
       CacheBuilder.newBuilder()
           .maximumSize(100)
           .expireAfterAccess(1, TimeUnit.HOURS)
           .build(
-              new CacheLoader<LanceConfig, List<Fragment>>() {
+              new CacheLoader<CacheKey, Map<Integer, Fragment>>() {
                 @Override
-                public List<Fragment> load(LanceConfig config) throws Exception {
+                public Map<Integer, Fragment> load(CacheKey key) throws Exception {
                   BufferAllocator allocator = LanceDatasetAdapter.allocator;
+                  LanceConfig config = key.getConfig();
                   ReadOptions options = SparkOptions.genReadOptionFromConfig(config);
                   Dataset dataset = Dataset.open(allocator, config.getDatasetUri(), options);
-                  return dataset.getFragments();
+                  return dataset.getFragments().stream()
+                      .collect(Collectors.toMap(Fragment::getId, f -> f));
                 }
               });
-  private LanceScanner scanner;
+  private final LanceScanner scanner;
 
   private LanceFragmentScanner(LanceScanner scanner) {
     this.scanner = scanner;
   }
 
   public static LanceFragmentScanner create(int fragmentId, LanceInputPartition inputPartition) {
-    LanceScanner scanner = null;
     try {
       LanceConfig config = inputPartition.getConfig();
-      List<Fragment> cachedFragments = LOADING_CACHE.get(config);
+      CacheKey key = new CacheKey(config, inputPartition.getScanId());
+      Map<Integer, Fragment> cachedFragments = LOADING_CACHE.get(key);
       Fragment fragment = cachedFragments.get(fragmentId);
       ScanOptions.Builder scanOptions = new ScanOptions.Builder();
       scanOptions.columns(getColumnNames(inputPartition.getSchema()));
@@ -81,18 +85,10 @@ public class LanceFragmentScanner implements AutoCloseable {
       if (inputPartition.getTopNSortOrders().isPresent()) {
         scanOptions.setColumnOrderings(inputPartition.getTopNSortOrders().get());
       }
-      scanner = fragment.newScan(scanOptions.build());
-    } catch (Throwable t) {
-      if (scanner != null) {
-        try {
-          scanner.close();
-        } catch (Throwable it) {
-          t.addSuppressed(it);
-        }
-      }
-      throw new RuntimeException(t);
+      return new LanceFragmentScanner(fragment.newScan(scanOptions.build()));
+    } catch (Throwable throwable) {
+      throw new RuntimeException(throwable);
     }
-    return new LanceFragmentScanner(scanner);
   }
 
   /** @return the arrow reader. The caller is responsible for closing the reader */
@@ -129,5 +125,31 @@ public class LanceFragmentScanner implements AutoCloseable {
     return Arrays.stream(schema.fields())
         .map(StructField::name)
         .anyMatch(name -> name.equals(LanceConstant.ROW_ADDRESS));
+  }
+
+  private static class CacheKey {
+    private final LanceConfig config;
+    private final String scanId;
+
+    CacheKey(LanceConfig config, String scanId) {
+      this.config = config;
+      this.scanId = scanId;
+    }
+
+    public LanceConfig getConfig() {
+      return config;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == null || getClass() != o.getClass()) return false;
+      CacheKey cacheKey = (CacheKey) o;
+      return Objects.equals(config, cacheKey.config) && Objects.equals(scanId, cacheKey.scanId);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(config, scanId);
+    }
   }
 }
