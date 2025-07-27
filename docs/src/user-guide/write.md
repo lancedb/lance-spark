@@ -4,49 +4,44 @@
 
 === "Python"
     ```python
+    # Method 1: Using path option
     (df.write
         .format("lance")
-        .option("dataset_uri", "/path/to/lance/database/my_dataset")
+        .option("path", "/path/to/lance/database/my_dataset.lance")
         .save())
-    ```
-
-=== "Scala"
-    ```scala
-    df.write.
-        format("lance").
-        option("dataset_uri", "/path/to/lance/database/my_dataset").
-        save()
-    ```
-
-=== "Java"
-    ```java
-    df.write()
-        .format("lance")
-        .option("dataset_uri", "/path/to/lance/database/my_dataset")
-        .save();
-    ```
-
-Alternatively, you can specify the path directly in the `save()` method:
-
-=== "Python"
-    ```python
+    
+    # Method 2: Direct path (alternative)
     (df.write
         .format("lance")
-        .save("/path/to/lance/database/my_dataset"))
+        .save("/path/to/lance/database/my_dataset.lance"))
     ```
 
 === "Scala"
     ```scala
+    // Method 1: Using path option
     df.write.
         format("lance").
-        save("/path/to/lance/database/my_dataset")
+        option("path", "/path/to/lance/database/my_dataset.lance").
+        save()
+    
+    // Method 2: Direct path (alternative)
+    df.write.
+        format("lance").
+        save("/path/to/lance/database/my_dataset.lance")
     ```
 
 === "Java"
     ```java
+    // Method 1: Using path option
     df.write()
         .format("lance")
-        .save("/path/to/lance/database/my_dataset");
+        .option("path", "/path/to/lance/database/my_dataset.lance")
+        .save();
+    
+    // Method 2: Direct path (alternative)
+    df.write()
+        .format("lance")
+        .save("/path/to/lance/database/my_dataset.lance");
     ```
 
 ## Write Modes
@@ -57,46 +52,61 @@ By default, writing to a dataset at a specific path means creating the dataset:
 
 === "Python"
     ```python
-    # First write - succeeds
+    # First write - succeeds (Method 1: path option)
     (testData.write
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .save())
+    
+    # First write - succeeds (Method 2: direct path)
+    (testData.write
+        .format("lance")
+        .save("/path/to/database/users.lance"))
     
     # Second write - throws TableAlreadyExistsException
     (testData.write
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .save())
     ```
 
 === "Scala"
     ```scala
-    // First write - succeeds
+    // First write - succeeds (Method 1: path option)
     testData.write.
         format("lance").
-        option("dataset_uri", "/path/to/database/users").
+        option("path", "/path/to/database/users.lance").
         save()
+    
+    // First write - succeeds (Method 2: direct path)
+    testData.write.
+        format("lance").
+        save("/path/to/database/users.lance")
     
     // Second write - throws TableAlreadyExistsException
     testData.write.
         format("lance").
-        option("dataset_uri", "/path/to/database/users").
+        option("path", "/path/to/database/users.lance").
         save()
     ```
 
 === "Java"
     ```java
-    // First write - succeeds
+    // First write - succeeds (Method 1: path option)
     testData.write()
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .save();
+    
+    // First write - succeeds (Method 2: direct path)
+    testData.write()
+        .format("lance")
+        .save("/path/to/database/users.lance");
     
     // Second write - throws TableAlreadyExistsException
     testData.write()
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .save();
     ```
 
@@ -109,15 +119,21 @@ Add new data to an existing dataset:
     # Create initial dataset
     (testData.write
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .save())
     
-    # Append more data
+    # Append more data (Method 1: path option)
     (moreData.write
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .mode("append")
         .save())
+    
+    # Append more data (Method 2: direct path)
+    (moreData.write
+        .format("lance")
+        .mode("append")
+        .save("/path/to/database/users.lance"))
     ```
 
 === "Scala"
@@ -125,15 +141,21 @@ Add new data to an existing dataset:
     // Create initial dataset
     testData.write.
         format("lance").
-        option("dataset_uri", "/path/to/database/users").
+        option("path", "/path/to/database/users.lance").
         save()
     
-    // Append more data
+    // Append more data (Method 1: path option)
     moreData.write.
         format("lance").
-        option("dataset_uri", "/path/to/database/users").
+        option("path", "/path/to/database/users.lance").
         mode("append").
         save()
+    
+    // Append more data (Method 2: direct path)
+    moreData.write.
+        format("lance").
+        mode("append").
+        save("/path/to/database/users.lance")
     ```
 
 === "Java"
@@ -141,15 +163,21 @@ Add new data to an existing dataset:
     // Create initial dataset
     testData.write()
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .save();
     
-    // Append more data
+    // Append more data (Method 1: path option)
     moreData.write()
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .mode("append")
         .save();
+    
+    // Append more data (Method 2: direct path)
+    moreData.write()
+        .format("lance")
+        .mode("append")
+        .save("/path/to/database/users.lance");
     ```
 
 ### Overwrite
@@ -161,15 +189,21 @@ Replace the entire dataset with new data:
     # Create initial dataset
     (initialData.write
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .save())
     
-    # Completely replace the dataset
+    # Completely replace the dataset (Method 1: path option)
     (newData.write
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .mode("overwrite")
         .save())
+    
+    # Completely replace the dataset (Method 2: direct path)
+    (newData.write
+        .format("lance")
+        .mode("overwrite")
+        .save("/path/to/database/users.lance"))
     ```
 
 === "Scala"
@@ -177,15 +211,21 @@ Replace the entire dataset with new data:
     // Create initial dataset
     initialData.write.
         format("lance").
-        option("dataset_uri", "/path/to/database/users").
+        option("path", "/path/to/database/users.lance").
         save()
     
-    // Completely replace the dataset
+    // Completely replace the dataset (Method 1: path option)
     newData.write.
         format("lance").
-        option("dataset_uri", "/path/to/database/users").
+        option("path", "/path/to/database/users.lance").
         mode("overwrite").
         save()
+    
+    // Completely replace the dataset (Method 2: direct path)
+    newData.write.
+        format("lance").
+        mode("overwrite").
+        save("/path/to/database/users.lance")
     ```
 
 === "Java"
@@ -193,13 +233,19 @@ Replace the entire dataset with new data:
     // Create initial dataset
     initialData.write()
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .save();
     
-    // Completely replace the dataset
+    // Completely replace the dataset (Method 1: path option)
     newData.write()
         .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
+        .option("path", "/path/to/database/users.lance")
         .mode("overwrite")
         .save();
+    
+    // Completely replace the dataset (Method 2: direct path)
+    newData.write()
+        .format("lance")
+        .mode("overwrite")
+        .save("/path/to/database/users.lance");
     ```

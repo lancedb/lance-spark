@@ -4,29 +4,38 @@
 
 === "Python"
     ```python
+    # Method 1: Using path option
     df = (spark.read
         .format("lance")
-        .option("db", "/path/to/lance/database")
-        .option("dataset", "my_dataset")
+        .option("path", "/path/to/lance/database/my_dataset.lance")
         .load())
+    
+    # Method 2: Direct path (alternative)
+    df = spark.read.format("lance").load("/path/to/lance/database/my_dataset.lance")
     ```
 
 === "Scala"
     ```scala
+    // Method 1: Using path option
     val df = spark.read.
         format("lance").
-        option("db", "/path/to/lance/database").
-        option("dataset", "my_dataset").
+        option("path", "/path/to/lance/database/my_dataset.lance").
         load()
+    
+    // Method 2: Direct path (alternative)
+    val df = spark.read.format("lance").load("/path/to/lance/database/my_dataset.lance")
     ```
 
 === "Java"
     ```java
+    // Method 1: Using path option
     Dataset<Row> df = spark.read()
         .format("lance")
-        .option("db", "/path/to/lance/database")
-        .option("dataset", "my_dataset")
+        .option("path", "/path/to/lance/database/my_dataset.lance")
         .load();
+    
+    // Method 2: Direct path (alternative)
+    Dataset<Row> df = spark.read().format("lance").load("/path/to/lance/database/my_dataset.lance");
     ```
 
 ## Column Selection
@@ -38,8 +47,7 @@ You can specify which columns to read to improve performance:
     ```python
     df = (spark.read
         .format("lance")
-        .option("db", "/path/to/lance/database")
-        .option("dataset", "my_dataset")
+        .option("path", "/path/to/lance/database/my_dataset.lance")
         .load()
         .select("id", "name", "age"))
     ```
@@ -48,8 +56,7 @@ You can specify which columns to read to improve performance:
     ```scala
     val df = spark.read.
         format("lance").
-        option("db", "/path/to/lance/database").
-        option("dataset", "my_dataset").
+        option("path", "/path/to/lance/database/my_dataset.lance").
         load().
         select("id", "name", "age")
     ```
@@ -58,8 +65,7 @@ You can specify which columns to read to improve performance:
     ```java
     Dataset<Row> df = spark.read()
         .format("lance")
-        .option("db", "/path/to/lance/database")
-        .option("dataset", "my_dataset")
+        .option("path", "/path/to/lance/database/my_dataset.lance")
         .load()
         .select("id", "name", "age");
     ```
@@ -75,8 +81,7 @@ The filter is pushed down to reduce the amount of data read:
     
     filtered = (spark.read
         .format("lance")
-        .option("db", "/path/to/database")
-        .option("dataset", "users")
+        .option("path", "/path/to/database/users.lance")
         .load()
         .filter(
             col("age").between(25, 65) &
@@ -91,8 +96,7 @@ The filter is pushed down to reduce the amount of data read:
     
     val filtered = spark.read.
         format("lance").
-        option("db", "/path/to/database").
-        option("dataset", "users").
+        option("path", "/path/to/database/users.lance").
         load().
         filter(
             col("age").between(25, 65) &&
@@ -105,8 +109,7 @@ The filter is pushed down to reduce the amount of data read:
     ```java
     Dataset<Row> filtered = spark.read()
         .format("lance")
-        .option("db", "/path/to/database")
-        .option("dataset", "users")
+        .option("path", "/path/to/database/users.lance")
         .load()
         .filter("age BETWEEN 25 AND 65 AND department = 'Engineering' AND is_active = true");
     ```
