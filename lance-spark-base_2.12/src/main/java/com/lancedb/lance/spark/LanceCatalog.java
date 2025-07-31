@@ -31,6 +31,7 @@ import scala.Some;
 
 import java.util.Map;
 
+@Deprecated
 public class LanceCatalog implements TableCatalog {
   private CaseInsensitiveStringMap options;
 

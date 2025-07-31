@@ -55,7 +55,7 @@
     <properties>
         <lance-spark.version>0.0.2</lance-spark.version>
         <lance.version>0.26.1</lance.version>
-        <lance-namespace.version>0.0.2</lance-namespace.version>
+        <lance-namespace.version>0.0.5</lance-namespace.version>
 
         <spark34.version>3.4.4</spark34.version>
         <spark35.version>3.5.5</spark35.version>
@@ -139,12 +139,11 @@
             <artifactId>lance-core</artifactId>
             <version>${lance.version}</version>
         </dependency>
-<!-- TODO: uncomment after initial release  -->
-<!--        <dependency>-->
-<!--            <groupId>com.lancedb</groupId>-->
-<!--            <artifactId>lance-namespace-apache-client</artifactId>-->
-<!--            <version>${lance-namespace.version}</version>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>com.lancedb</groupId>
+            <artifactId>lance-namespace-core</artifactId>
+            <version>${lance-namespace.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -221,6 +220,13 @@
                 <artifactId>spotless-maven-plugin</artifactId>
             </plugin>
         </plugins>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.7.0</version>
+            </extension>
+        </extensions>
         <pluginManagement>
             <plugins>
                 <plugin>
