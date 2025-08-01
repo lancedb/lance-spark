@@ -69,8 +69,8 @@ nav:
   - User Guide:
     - Install: user-guide/install.md
     - Config: user-guide/config.md
-    - Read: user-guide/read.md
-    - Write: user-guide/write.md
+    - Inspecting Datasets: user-guide/read.md
+    - Managing Datasets: user-guide/write.md
   - Development Guide: dev-guide.md
   - Lance: https://lancedb.github.io/lance
   - Apache Spark: https://spark.apache.org/third-party-projects.html

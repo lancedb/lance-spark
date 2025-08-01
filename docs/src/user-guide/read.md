@@ -1,112 +1,77 @@
-# Reading Lance Datasets
+# Inspecting your Lance Datasets
 
-## Basic Reading
+## SELECT
 
-=== "Python"
-    ```python
-    df = (spark.read
-        .format("lance")
-        .option("db", "/path/to/lance/database")
-        .option("dataset", "my_dataset")
-        .load())
-    ```
+```sql
+-- Select all data from a table
+SELECT * FROM users;
 
-=== "Scala"
-    ```scala
-    val df = spark.read.
-        format("lance").
-        option("db", "/path/to/lance/database").
-        option("dataset", "my_dataset").
-        load()
-    ```
+-- Select specific columns
+SELECT id, name, email FROM users;
 
-=== "Java"
-    ```java
-    Dataset<Row> df = spark.read()
-        .format("lance")
-        .option("db", "/path/to/lance/database")
-        .option("dataset", "my_dataset")
-        .load();
-    ```
+-- Query with WHERE clause
+SELECT * FROM users WHERE age > 25;
 
-## Column Selection
+-- Aggregate queries
+SELECT department, COUNT(*) as employee_count 
+FROM users 
+GROUP BY department;
 
-Lance is a columnar format.
-You can specify which columns to read to improve performance:
+-- Join queries
+SELECT u.name, p.title
+FROM users u
+JOIN projects p ON u.id = p.user_id;
+```
 
-=== "Python"
-    ```python
-    df = (spark.read
-        .format("lance")
-        .option("db", "/path/to/lance/database")
-        .option("dataset", "my_dataset")
-        .load()
-        .select("id", "name", "age"))
-    ```
+## SHOW TABLES
 
-=== "Scala"
-    ```scala
-    val df = spark.read.
-        format("lance").
-        option("db", "/path/to/lance/database").
-        option("dataset", "my_dataset").
-        load().
-        select("id", "name", "age")
-    ```
+```sql
+-- Show all tables in the default namespace
+SHOW TABLES;
+     
+-- Show all tables in a specific namespace ns2
+ SNOW TABLES IN ns2;
+```
 
-=== "Java"
-    ```java
-    Dataset<Row> df = spark.read()
-        .format("lance")
-        .option("db", "/path/to/lance/database")
-        .option("dataset", "my_dataset")
-        .load()
-        .select("id", "name", "age");
-    ```
+## DESCRIBE TABLE
 
-## Filters
+```sql
 
-You can apply filters to a read.
-The filter is pushed down to reduce the amount of data read:
+-- Describe table structure
+DESCRIBE TABLE users;
+
+-- Show detailed table information
+DESCRIBE EXTENDED users;
+```
+
+## DataFrame Read
 
 === "Python"
     ```python
-    from pyspark.sql.functions import col
+    # Load table as DataFrame
+    users_df = spark.table("lance.default.users")
     
-    filtered = (spark.read
-        .format("lance")
-        .option("db", "/path/to/database")
-        .option("dataset", "users")
-        .load()
-        .filter(
-            col("age").between(25, 65) &
-            col("department") == "Engineering" &
-            col("is_active") == True
-        ))
+    # Use DataFrame operations
+    filtered_users = users_df.filter("age > 25").select("name", "email")
+    filtered_users.show()
     ```
 
 === "Scala"
     ```scala
-    import org.apache.spark.sql.functions.col
+    // Load table as DataFrame
+    val usersDF = spark.table("lance.default.users")
     
-    val filtered = spark.read.
-        format("lance").
-        option("db", "/path/to/database").
-        option("dataset", "users").
-        load().
-        filter(
-            col("age").between(25, 65) &&
-            col("department") === "Engineering" &&
-            col("is_active") === true
-        )
+    // Use DataFrame operations
+    val filteredUsers = usersDF.filter("age > 25").select("name", "email")
+    filteredUsers.show()
     ```
 
 === "Java"
     ```java
-    Dataset<Row> filtered = spark.read()
-        .format("lance")
-        .option("db", "/path/to/database")
-        .option("dataset", "users")
-        .load()
-        .filter("age BETWEEN 25 AND 65 AND department = 'Engineering' AND is_active = true");
+    // Load table as DataFrame
+    Dataset<Row> usersDF = spark.table("lance.default.users");
+    
+    // Use DataFrame operations
+    Dataset<Row> filteredUsers = usersDF.filter("age > 25").select("name", "email");
+    filteredUsers.show();
     ```
