@@ -52,7 +52,7 @@ If you want to also include the bundled jar in your own bundle, remove the provi
 
 You can either download the bundled jar dependency from Maven and add it to your Spark classpath,
 or supply the dependency dynamically to a Spark cluster through `--packages` flag.
-See [Spark Catalog Configuration](config.md#spark-catalog-configuration) for more details.
+See [Configuration](config.md) for more details.
 
 ## Requirements
 

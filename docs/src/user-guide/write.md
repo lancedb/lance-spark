@@ -1,205 +1,176 @@
-# Writing Lance Datasets
+# Managing your Lance Datasets
 
-## Basic Writing
+## CREATE TABLE
+
+```sql
+-- Create a simple table
+CREATE TABLE users (
+    id BIGINT NOT NULL,
+    name STRING,
+    email STRING,
+    created_at TIMESTAMP
+);
+
+
+-- Create table with complex data types
+CREATE TABLE events (
+    event_id BIGINT NOT NULL,
+    user_id BIGINT,
+    event_type STRING,
+    tags ARRAY<STRING>,
+    metadata STRUCT<
+        source: STRING,
+        version: INT,
+        processed_at: TIMESTAMP
+    >,
+    occurred_at TIMESTAMP
+);
+```
+
+## INSERT INTO
+
+```sql
+-- Insert individual rows
+INSERT INTO users VALUES 
+    (4, 'David', 'david@example.com', '2024-01-15 10:30:00'),
+    (5, 'Eva', 'eva@example.com', '2024-01-15 11:45:00');
+
+-- Insert with column specification
+INSERT INTO users (id, name, email) VALUES 
+    (6, 'Frank', 'frank@example.com'),
+    (7, 'Grace', 'grace@example.com');
+
+-- Insert from SELECT query
+INSERT INTO users
+SELECT user_id as id, username as name, email_address as email, signup_date as created_at
+FROM staging.user_signups
+WHERE signup_date >= '2024-01-01';
+
+-- Insert with complex data types
+INSERT INTO events VALUES (
+    1001,
+    123,
+    'page_view',
+    map('page', '/home', 'referrer', 'google'),
+    array('web', 'desktop'),
+    struct('web_app', 1, '2024-01-15 12:00:00'),
+    '2024-01-15 12:00:00'
+);
+```
+
+## DROP TABLE
+
+```sql
+-- Drop table
+DROP TABLE users;
+
+-- Drop table if it exists (no error if table doesn't exist)
+DROP TABLE IF EXISTS users;
+```
+
+## DataFrame CreateTable
 
 === "Python"
     ```python
-    (df.write
-        .format("lance")
-        .option("dataset_uri", "/path/to/lance/database/my_dataset")
-        .save())
+    # Create DataFrame
+    data = [
+    (1, "Alice", "alice@example.com"),
+    (2, "Bob", "bob@example.com"),
+    (3, "Charlie", "charlie@example.com")
+    ]
+    df = spark.createDataFrame(data, ["id", "name", "email"])
+    
+    # Write as new table using catalog
+    df.writeTo("users").create()
     ```
 
 === "Scala"
     ```scala
-    df.write.
-        format("lance").
-        option("dataset_uri", "/path/to/lance/database/my_dataset").
-        save()
+    import spark.implicits._
+    
+    // Create DataFrame
+    val data = Seq(
+        (1, "Alice", "alice@example.com"),
+        (2, "Bob", "bob@example.com"),
+        (3, "Charlie", "charlie@example.com")
+    )
+    val df = data.toDF("id", "name", "email")
+    
+    // Write as new table using catalog
+    df.writeTo("users").create()
     ```
 
 === "Java"
     ```java
-    df.write()
-        .format("lance")
-        .option("dataset_uri", "/path/to/lance/database/my_dataset")
-        .save();
+    import org.apache.spark.sql.types.*;
+    import org.apache.spark.sql.Row;
+    import org.apache.spark.sql.RowFactory;
+    
+    // Create DataFrame
+    List<Row> data = Arrays.asList(
+        RowFactory.create(1L, "Alice", "alice@example.com"),
+        RowFactory.create(2L, "Bob", "bob@example.com"),
+        RowFactory.create(3L, "Charlie", "charlie@example.com")
+    );
+    
+    StructType schema = new StructType(new StructField[]{
+        new StructField("id", DataTypes.LongType, false, Metadata.empty()),
+        new StructField("name", DataTypes.StringType, true, Metadata.empty()),
+        new StructField("email", DataTypes.StringType, true, Metadata.empty())
+    });
+    
+    Dataset<Row> df = spark.createDataFrame(data, schema);
+    
+    // Write as new table using catalog
+    df.writeTo("users").create();
     ```
 
-Alternatively, you can specify the path directly in the `save()` method:
+## DataFrame Write
 
 === "Python"
     ```python
-    (df.write
-        .format("lance")
-        .save("/path/to/lance/database/my_dataset"))
+    # Create new data
+    new_data = [
+        (8, "Henry", "henry@example.com"),
+        (9, "Ivy", "ivy@example.com")
+    ]
+    new_df = spark.createDataFrame(new_data, ["id", "name", "email"])
+    
+    # Append to existing table
+    new_df.writeTo("users").append()
+    
+    # Alternative: use traditional write API with mode
+    new_df.write.mode("append").saveAsTable("users")
     ```
 
 === "Scala"
     ```scala
-    df.write.
-        format("lance").
-        save("/path/to/lance/database/my_dataset")
+    // Create new data
+    val newData = Seq(
+        (8, "Henry", "henry@example.com"),
+        (9, "Ivy", "ivy@example.com")
+    )
+    val newDF = newData.toDF("id", "name", "email")
+    
+    // Append to existing table
+    newDF.writeTo("users").append()
+    
+    // Alternative: use traditional write API with mode
+    newDF.write.mode("append").saveAsTable("users")
     ```
 
 === "Java"
     ```java
-    df.write()
-        .format("lance")
-        .save("/path/to/lance/database/my_dataset");
-    ```
-
-## Write Modes
-
-### Create
-
-By default, writing to a dataset at a specific path means creating the dataset:
-
-=== "Python"
-    ```python
-    # First write - succeeds
-    (testData.write
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .save())
+    // Create new data
+    List<Row> newData = Arrays.asList(
+        RowFactory.create(8L, "Henry", "henry@example.com"),
+        RowFactory.create(9L, "Ivy", "ivy@example.com")
+    );
+    Dataset<Row> newDF = spark.createDataFrame(newData, schema);
     
-    # Second write - throws TableAlreadyExistsException
-    (testData.write
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .save())
-    ```
-
-=== "Scala"
-    ```scala
-    // First write - succeeds
-    testData.write.
-        format("lance").
-        option("dataset_uri", "/path/to/database/users").
-        save()
+    // Append to existing table
+    newDF.writeTo("users").append();
     
-    // Second write - throws TableAlreadyExistsException
-    testData.write.
-        format("lance").
-        option("dataset_uri", "/path/to/database/users").
-        save()
-    ```
-
-=== "Java"
-    ```java
-    // First write - succeeds
-    testData.write()
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .save();
-    
-    // Second write - throws TableAlreadyExistsException
-    testData.write()
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .save();
-    ```
-
-### Append
-
-Add new data to an existing dataset:
-
-=== "Python"
-    ```python
-    # Create initial dataset
-    (testData.write
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .save())
-    
-    # Append more data
-    (moreData.write
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .mode("append")
-        .save())
-    ```
-
-=== "Scala"
-    ```scala
-    // Create initial dataset
-    testData.write.
-        format("lance").
-        option("dataset_uri", "/path/to/database/users").
-        save()
-    
-    // Append more data
-    moreData.write.
-        format("lance").
-        option("dataset_uri", "/path/to/database/users").
-        mode("append").
-        save()
-    ```
-
-=== "Java"
-    ```java
-    // Create initial dataset
-    testData.write()
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .save();
-    
-    // Append more data
-    moreData.write()
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .mode("append")
-        .save();
-    ```
-
-### Overwrite
-
-Replace the entire dataset with new data:
-
-=== "Python"
-    ```python
-    # Create initial dataset
-    (initialData.write
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .save())
-    
-    # Completely replace the dataset
-    (newData.write
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .mode("overwrite")
-        .save())
-    ```
-
-=== "Scala"
-    ```scala
-    // Create initial dataset
-    initialData.write.
-        format("lance").
-        option("dataset_uri", "/path/to/database/users").
-        save()
-    
-    // Completely replace the dataset
-    newData.write.
-        format("lance").
-        option("dataset_uri", "/path/to/database/users").
-        mode("overwrite").
-        save()
-    ```
-
-=== "Java"
-    ```java
-    // Create initial dataset
-    initialData.write()
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .save();
-    
-    // Completely replace the dataset
-    newData.write()
-        .format("lance")
-        .option("dataset_uri", "/path/to/database/users")
-        .mode("overwrite")
-        .save();
+    // Alternative: use traditional write API with mode
+    newDF.write().mode("append").saveAsTable("users");
     ```
