@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public abstract class SparkConnectorReadWithRowAddressTestBase {
+public class SparkConnectorReadWithRowIdTest {
   private static SparkSession spark;
   private static String dbPath;
   private static Dataset<Row> data;
@@ -79,22 +79,22 @@ public abstract class SparkConnectorReadWithRowAddressTestBase {
   }
 
   @Test
-  public void readAllWithoutRowAddr() {
+  public void readAllWithoutRowId() {
     validateData(data, TestUtils.TestTable1Config.expectedValues);
   }
 
   @Test
-  public void readAllWithRowAddr() {
+  public void readAllWithRowId() {
     validateData(
-        data.select("x", "y", "b", "c", "_rowaddr"),
-        TestUtils.TestTable1Config.expectedValuesWithRowAddress);
+        data.select("x", "y", "b", "c", "_rowid"),
+        TestUtils.TestTable1Config.expectedValuesWithRowId);
   }
 
   @Test
   public void select() {
     validateData(
-        data.select("y", "b", "_rowaddr"),
-        TestUtils.TestTable1Config.expectedValuesWithRowAddress.stream()
+        data.select("y", "b", "_rowid"),
+        TestUtils.TestTable1Config.expectedValuesWithRowId.stream()
             .map(row -> Arrays.asList(row.get(1), row.get(2), row.get(4)))
             .collect(Collectors.toList()));
   }
@@ -102,31 +102,29 @@ public abstract class SparkConnectorReadWithRowAddressTestBase {
   @Test
   public void filterSelect() {
     validateData(
-        data.select("y", "b", "_rowaddr").filter("y > 3"),
-        TestUtils.TestTable1Config.expectedValuesWithRowAddress.stream()
+        data.select("y", "b", "_rowid").filter("y > 3"),
+        TestUtils.TestTable1Config.expectedValuesWithRowId.stream()
             .map(
                 row ->
                     Arrays.asList(
                         row.get(1),
                         row.get(2),
-                        row.get(
-                            4))) // "y" is at index 1, "b" is at index 2, "_rowaddr" is at index 4
+                        row.get(4))) // "y" is at index 1, "b" is at index 2, "_rowid" is at index 4
             .filter(row -> row.get(0) > 3)
             .collect(Collectors.toList()));
   }
 
   @Test
-  public void filterSelectByRowAddr() {
+  public void filterSelectByRowId() {
     validateData(
-        data.select("y", "b", "_rowaddr").filter("_rowaddr > 3"),
-        TestUtils.TestTable1Config.expectedValuesWithRowAddress.stream()
+        data.select("y", "b", "_rowid").filter("_rowid > 3"),
+        TestUtils.TestTable1Config.expectedValuesWithRowId.stream()
             .map(
                 row ->
                     Arrays.asList(
                         row.get(1),
                         row.get(2),
-                        row.get(
-                            4))) // "y" is at index 1, "b" is at index 2, "_rowaddr" is at index 4
+                        row.get(4))) // "y" is at index 1, "b" is at index 2, "_rowid" is at index 4
             .filter(row -> row.get(2) > 3)
             .collect(Collectors.toList()));
   }

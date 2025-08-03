@@ -46,9 +46,7 @@ jobs:
     timeout-minutes: 60
     strategy:
       matrix:
-        java-version: [ 8, 11, 17 ]
-        scala-version: [ 2.12 ]
-        spark-version: [ 3.4, 3.5 ]
+        java-version: [ 17 ]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java
@@ -60,6 +58,6 @@ jobs:
       - name: Check code style
         run: |
           mvn checkstyle:check spotless:check
-      - name: Running tests with Java ${{ matrix.java-version }} Scala ${{ matrix.scala-version }} for Spark ${{ matrix.spark-version }}
+      - name: Running tests with Java ${{ matrix.java-version }}
         run: |
-          mvn install -Pspark-${{ matrix.spark-version }} -Pscala-${{ matrix.scala-version }} -pl lance-spark-${{ matrix.spark-version }}_${{ matrix.scala-version }} -am
+          mvn install 

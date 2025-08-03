@@ -27,7 +27,6 @@ import org.apache.spark.sql.connector.catalog.TableChange;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
-import scala.Some;
 
 import java.util.Map;
 
@@ -59,7 +58,7 @@ public class LanceCatalog implements TableCatalog {
       WriteParams params = SparkOptions.genWriteParamsFromConfig(config);
       LanceDatasetAdapter.createDataset(ident.name(), schema, params);
     } catch (IllegalArgumentException e) {
-      throw new TableAlreadyExistsException(ident.name(), new Some<>(e));
+      throw new TableAlreadyExistsException(ident.name());
     }
     return new LanceDataset(LanceConfig.from(options, ident.name()), schema);
   }

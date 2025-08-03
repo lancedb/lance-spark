@@ -30,7 +30,6 @@ import org.apache.spark.sql.internal.connector.SupportsMetadata;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import scala.collection.immutable.Map;
-import scala.collection.mutable.HashMap;
 
 import java.io.Serializable;
 import java.util.List;
@@ -97,12 +96,14 @@ public class LanceScan
 
   @Override
   public Map<String, String> getMetaData() {
-    HashMap<String, String> hashMap = new HashMap<>();
-    hashMap.put("whereConditions", whereConditions.toString());
-    hashMap.put("limit", limit.toString());
-    hashMap.put("offset", offset.toString());
-    hashMap.put("topNSortOrders", topNSortOrders.toString());
-    return hashMap.toMap(scala.Predef.conforms());
+    scala.collection.immutable.Map<String, String> empty =
+        scala.collection.immutable.Map$.MODULE$.empty();
+    scala.collection.immutable.Map<String, String> result = empty;
+    result = result.$plus(scala.Tuple2.apply("whereConditions", whereConditions.toString()));
+    result = result.$plus(scala.Tuple2.apply("limit", limit.toString()));
+    result = result.$plus(scala.Tuple2.apply("offset", offset.toString()));
+    result = result.$plus(scala.Tuple2.apply("topNSortOrders", topNSortOrders.toString()));
+    return result;
   }
 
   @Override

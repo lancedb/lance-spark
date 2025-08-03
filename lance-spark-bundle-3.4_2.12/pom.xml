@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.lancedb</groupId>
         <artifactId>lance-spark-root</artifactId>
-        <version>0.0.2</version>
+        <version>0.0.3</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -49,7 +49,7 @@
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>false</overWriteSnapshots>
                             <overWriteIfNewer>true</overWriteIfNewer>
-                            <includeArtifactIds>lance-core,lance-spark-base_${scala.compat.version},lance-spark-${spark34.compat.version}_${scala.compat.version},arrow-c-data,jar-jni,arrow-dataset</includeArtifactIds>
+                            <includeArtifactIds>lance-core,lance-namespace-core,lance-spark-base_${scala.compat.version},lance-spark-${spark34.compat.version}_${scala.compat.version},arrow-c-data,jar-jni,arrow-dataset</includeArtifactIds>
                         </configuration>
                     </execution>
                     <execution>
