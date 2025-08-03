@@ -12,16 +12,21 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>lance-spark-3.5_2.12</artifactId>
+    <artifactId>lance-spark-3.4_2.13</artifactId>
     <name>${project.artifactId}</name>
-    <description>Apache Spark 3.5 Connector for Lance</description>
+    <description>Apache Spark 3.4 Connector for Lance</description>
     <packaging>jar</packaging>
+
+    <properties>
+        <scala.version>${scala213.version}</scala.version>
+        <scala.compat.version>${scala213.compat.version}</scala.compat.version>
+    </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.compat.version}</artifactId>
-            <version>${spark35.version}</version>
+            <version>${spark34.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

@@ -28,10 +28,11 @@ If you want to also include the bundled jar in your own bundle, remove the provi
 
 === "Maven"
     ```xml
+    <!-- For Spark 3.5 (Scala 2.12) -->
     <dependency>
-        <groupId>com.lancedb.lance</groupId>
+        <groupId>com.lancedb</groupId>
         <artifactId>lance-spark-bundle-3.5_2.12</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.3</version>
         <scope>provided</scope>
     </dependency>
     ```
@@ -39,13 +40,17 @@ If you want to also include the bundled jar in your own bundle, remove the provi
 === "Gradle"
     ```gradle   
     dependencies {
-        compileOnly 'com.lancedb.lance:lance-spark-bundle-3.5_2.12:0.0.1'
+        // For Spark 3.5 (Scala 2.12)
+        compileOnly 'com.lancedb:lance-spark-bundle-3.5_2.12:0.0.3'
     }
     ```
 
 === "sbt"
     ```scala
-    libraryDependencies += "com.lancedb.lance" %% "lance-spark-bundle-3.5_2.12" % "0.0.1" % "provided"
+    libraryDependencies ++= Seq(
+      // For Spark 3.5 (Scala 2.12)
+      "com.lancedb" %% "lance-spark-bundle-3.5_2.12" % "0.0.3" % "provided"
+    )
     ```
 
 ### In Spark Cluster
@@ -58,29 +63,29 @@ See [Configuration](config.md) for more details.
 
 ### Java
 
-| Java Version | Support Status | Notes                              |
-|--------------|----------------|------------------------------------|
-| Java 8       | ✅ Supported    | Minimum required version           |
-| Java 11      | ✅ Supported    | Recommended for production         |
-| Java 17      | ✅ Supported    | Latest LTS version                 |
-| Java 21+     | ⚠️ Untested    | May work but not officially tested |
+| Java Version | Support Status | Notes                                                        |
+|--------------|----------------|--------------------------------------------------------------|
+| Java 8       | ✅ Supported    | Minimum required version                                     |
+| Java 11      | ✅ Supported    | Recommended for production                                   |
+| Java 17      | ✅ Supported    | Latest LTS version (Spark 4.0 dropped Java 8 and 11 support) |
+| Java 21+     | ⚠️ Untested    | May work but not officially tested                           |
 
 ### Scala
 
 | Scala Version | Support Status  | Notes                               |
 |---------------|-----------------|-------------------------------------|
-| Scala 2.12    | ✅ Supported     | Required                            |
-| Scala 2.13    | 🚧 In Progress  | Support planned for future releases |
+| Scala 2.12    | ✅ Supported     | Fully supported                     |
+| Scala 2.13    | ✅ Supported     | Fully supported                     |
 | Scala 3.x     | ❌ Not Supported | Not currently planned               |
 
 ### Apache Spark
 
 | Spark Version       | Support Status  | Notes                                                        |
 |---------------------|-----------------|--------------------------------------------------------------|
-| Spark 3.5           | ✅ Supported     | Primary supported version                                    |
-| Spark 3.4           | ✅ Supported     | Requires manual building, Maven publication work in progress |
+| Spark 4.0           | ✅ Supported     | Scala 2.13 only (Spark 4.0 dropped Scala 2.12 support)     |
+| Spark 3.5           | ✅ Supported     | Scala 2.12 and 2.13                                         |
+| Spark 3.4           | ✅ Supported     | Scala 2.12 and 2.13                                         |
 | Spark 3.1, 3.2, 3.3 | ⚠️ Untested     | May work but not officially tested                           |
-| Spark 4.0           | 🚧 In Progress  | Support planned for future releases                          |
 | Spark 2.x           | ❌ Not Supported |                                                              |
 
 ### Operating System

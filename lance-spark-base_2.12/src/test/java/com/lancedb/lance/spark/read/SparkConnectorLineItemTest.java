@@ -29,7 +29,7 @@ import static org.apache.spark.sql.functions.desc;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-public abstract class SparkConnectorLineItemTestBase {
+public class SparkConnectorLineItemTest {
   private static SparkSession spark;
   private static String dbPath;
   private static String parquetPath;

@@ -12,21 +12,26 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>lance-spark-bundle-3.5_2.12</artifactId>
+    <artifactId>lance-spark-bundle-4.0_2.13</artifactId>
     <name>${project.artifactId}</name>
-    <description>Bundled Jar of Apache Spark 3.5 Connector for Lance</description>
+    <description>Bundled Jar of Apache Spark 4.0 Connector for Lance</description>
     <packaging>jar</packaging>
+
+    <properties>
+        <scala.version>${scala213.version}</scala.version>
+        <scala.compat.version>${scala213.compat.version}</scala.compat.version>
+    </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.compat.version}</artifactId>
-            <version>${spark35.version}</version>
+            <version>${spark40.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.lancedb</groupId>
-            <artifactId>lance-spark-${spark35.compat.version}_${scala.compat.version}</artifactId>
+            <artifactId>lance-spark-${spark40.compat.version}_${scala.compat.version}</artifactId>
             <version>${lance-spark.version}</version>
         </dependency>
     </dependencies>
@@ -49,7 +54,7 @@
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>false</overWriteSnapshots>
                             <overWriteIfNewer>true</overWriteIfNewer>
-                            <includeArtifactIds>lance-core,lance-namespace-core,lance-spark-base_${scala.compat.version},lance-spark-${spark35.compat.version}_${scala.compat.version},arrow-c-data,jar-jni,arrow-dataset</includeArtifactIds>
+                            <includeArtifactIds>lance-core,lance-spark-base_${scala.compat.version},lance-spark-${spark40.compat.version}_${scala.compat.version},arrow-c-data,jar-jni,arrow-dataset</includeArtifactIds>
                         </configuration>
                     </execution>
                     <execution>

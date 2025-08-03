@@ -40,7 +40,7 @@ import static org.apache.spark.sql.functions.col;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public abstract class SparkConnectorWriteTestBase {
+public class SparkConnectorWriteTest {
   private static SparkSession spark;
   private static Dataset<Row> testData;
   @TempDir static Path dbPath;
