@@ -15,19 +15,16 @@ package com.lancedb.lance.spark.bundle;
 
 /**
  * Information about the Lance Spark Bundle for Spark 3.5 with Scala 2.12.
- * <p>
- * This is a bundled JAR containing all necessary dependencies for the Lance Spark connector.
- * </p>
+ *
+ * <p>This is a bundled JAR containing all necessary dependencies for the Lance Spark connector.
  */
 public final class BundleInfo {
-    private BundleInfo() {
-        // Utility class
-    }
+  private BundleInfo() {
+    // Utility class
+  }
 
-    /**
-     * @return the bundle name
-     */
-    public static String getBundleName() {
-        return "lance-spark-bundle-3.5_2.12";
-    }
+  /** @return the bundle name */
+  public static String getBundleName() {
+    return "lance-spark-bundle-3.5_2.12";
+  }
 }
