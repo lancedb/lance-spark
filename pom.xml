@@ -116,18 +116,7 @@
     </properties>
 
     <modules>
-        <module>lance-spark-base_2.12</module>
-        <module>lance-spark-3.5_2.12</module>
-        <module>lance-spark-bundle-3.5_2.12</module>
-        <module>lance-spark-3.4_2.12</module>
-        <module>lance-spark-bundle-3.4_2.12</module>
-        <module>lance-spark-base_2.13</module>
-        <module>lance-spark-3.5_2.13</module>
-        <module>lance-spark-bundle-3.5_2.13</module>
-        <module>lance-spark-3.4_2.13</module>
-        <module>lance-spark-bundle-3.4_2.13</module>
-        <module>lance-spark-4.0_2.13</module>
-        <module>lance-spark-bundle-4.0_2.13</module>
+        <module>lance-spark-base_${scala.compat.version}</module>
     </modules>
 
     <dependencyManagement>
@@ -378,7 +367,7 @@
         <profile>
             <id>scala-2.12</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
                 <scala.version>${scala212.version}</scala.version>
@@ -398,22 +387,30 @@
         <profile>
             <id>spark-3.4</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
                 <spark.version>${spark34.version}</spark.version>
                 <spark.compat.version>${spark34.compat.version}</spark.compat.version>
             </properties>
+            <modules>
+                <module>lance-spark-3.4_${scala.compat.version}</module>
+                <module>lance-spark-bundle-3.4_${scala.compat.version}</module>
+            </modules>
         </profile>
         <profile>
             <id>spark-3.5</id>
             <activation>
-                <activeByDefault>false</activeByDefault>
+                <activeByDefault>true</activeByDefault>
             </activation>
             <properties>
                 <spark.version>${spark35.version}</spark.version>
                 <spark.compat.version>${spark35.compat.version}</spark.compat.version>
             </properties>
+            <modules>
+                <module>lance-spark-3.5_${scala.compat.version}</module>
+                <module>lance-spark-bundle-3.5_${scala.compat.version}</module>
+            </modules>
         </profile>
         <profile>
             <id>spark-4.0</id>
@@ -424,6 +421,10 @@
                 <spark.version>${spark40.version}</spark.version>
                 <spark.compat.version>${spark40.compat.version}</spark.compat.version>
             </properties>
+            <modules>
+                <module>lance-spark-4.0_${scala.compat.version}</module>
+                <module>lance-spark-bundle-4.0_${scala.compat.version}</module>
+            </modules>
         </profile>
         <profile>
             <id>deploy-to-ossrh</id>
