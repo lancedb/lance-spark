@@ -37,7 +37,8 @@ public class LanceColumnarPartitionReaderTest {
             0,
             split,
             TestUtils.TestTable1Config.lanceConfig,
-            Optional.empty());
+            Optional.empty(),
+            "test");
     try (LanceColumnarPartitionReader reader = new LanceColumnarPartitionReader(partition)) {
       List<List<Long>> expectedValues = TestUtils.TestTable1Config.expectedValues;
       int rowIndex = 0;
@@ -73,7 +74,9 @@ public class LanceColumnarPartitionReaderTest {
             TestUtils.TestTable1Config.lanceConfig,
             Optional.empty(),
             Optional.of(1),
-            Optional.of(1));
+            Optional.of(1),
+            Optional.empty(),
+            "testOffsetAndLimit");
     try (LanceColumnarPartitionReader reader = new LanceColumnarPartitionReader(partition)) {
       List<List<Long>> expectedValues = TestUtils.TestTable1Config.expectedValues;
       int rowIndex = 1;
@@ -112,7 +115,8 @@ public class LanceColumnarPartitionReaderTest {
             Optional.empty(),
             Optional.of(1),
             Optional.empty(),
-            Optional.of(Collections.singletonList(builder.build())));
+            Optional.of(Collections.singletonList(builder.build())),
+            "testTopN");
     try (LanceColumnarPartitionReader reader = new LanceColumnarPartitionReader(partition)) {
       List<List<Long>> expectedValues = TestUtils.TestTable1Config.expectedValues;
 

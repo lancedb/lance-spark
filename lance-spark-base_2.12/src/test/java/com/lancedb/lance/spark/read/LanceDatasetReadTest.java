@@ -92,7 +92,8 @@ public class LanceDatasetReadTest {
                 0,
                 new LanceSplit(Arrays.asList(fragment)),
                 TestUtils.TestTable1Config.lanceConfig,
-                Optional.empty()))) {
+                Optional.empty(),
+                "validateFragment"))) {
       try (ArrowReader reader = scanner.getArrowReader()) {
         VectorSchemaRoot root = reader.getVectorSchemaRoot();
         assertNotNull(root);
