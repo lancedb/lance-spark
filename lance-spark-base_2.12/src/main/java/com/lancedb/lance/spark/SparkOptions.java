@@ -15,6 +15,7 @@ package com.lancedb.lance.spark;
 
 import com.lancedb.lance.ReadOptions;
 import com.lancedb.lance.WriteParams;
+import com.lancedb.lance.namespace.util.PropertyUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -93,6 +94,9 @@ public class SparkOptions {
     if (maps.containsKey(allow_http)) {
       storageOptions.put(allow_http, maps.get(allow_http));
     }
+    Map<String, String> storageOptionsOverride =
+        PropertyUtil.propertiesWithPrefix(maps, "storage.");
+    storageOptions.putAll(storageOptionsOverride);
     return storageOptions;
   }
 

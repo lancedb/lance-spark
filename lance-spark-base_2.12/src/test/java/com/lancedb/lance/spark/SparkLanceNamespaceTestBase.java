@@ -30,11 +30,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class LanceNamespaceTestBase {
+public abstract class SparkLanceNamespaceTestBase {
   protected SparkSession spark;
   protected TableCatalog catalog;
   protected String catalogName = "lance_ns";
@@ -72,6 +73,16 @@ public abstract class LanceNamespaceTestBase {
 
   protected Map<String, String> getAdditionalNsConfigs() {
     return new HashMap<>();
+  }
+
+  /**
+   * Override this method to indicate whether the namespace implementation supports namespace
+   * operations. Default is false for backward compatibility.
+   *
+   * @return true if namespace operations are supported, false otherwise
+   */
+  protected boolean supportsNamespace() {
+    return false;
   }
 
   /**
@@ -312,5 +323,252 @@ public abstract class LanceNamespaceTestBase {
     assertEquals(87, results.get(1).getInt(1));
     assertEquals("Charlie", results.get(2).getString(0));
     assertEquals(92, results.get(2).getInt(1));
+  }
+
+  @Test
+  public void testCreateAndDropNamespace() throws Exception {
+    if (!supportsNamespace()) {
+      return; // Skip test for implementations that don't support namespaces
+    }
+
+    String namespaceName = "test_ns_" + UUID.randomUUID().toString().replace("-", "");
+
+    // Create namespace using Spark SQL
+    spark.sql("CREATE NAMESPACE " + catalogName + "." + namespaceName);
+
+    // Verify namespace exists
+    Dataset<Row> namespaces = spark.sql("SHOW NAMESPACES IN " + catalogName);
+    List<Row> nsList = namespaces.collectAsList();
+    boolean found = false;
+    for (Row row : nsList) {
+      if (namespaceName.equals(row.getString(0))) {
+        found = true;
+        break;
+      }
+    }
+    assertTrue(found);
+
+    // Drop namespace
+    spark.sql("DROP NAMESPACE " + catalogName + "." + namespaceName);
+
+    // Verify namespace no longer exists
+    namespaces = spark.sql("SHOW NAMESPACES IN " + catalogName);
+    nsList = namespaces.collectAsList();
+    found = false;
+    for (Row row : nsList) {
+      if (namespaceName.equals(row.getString(0))) {
+        found = true;
+        break;
+      }
+    }
+    assertFalse(found);
+  }
+
+  @Test
+  public void testListNamespaces() throws Exception {
+    if (!supportsNamespace()) {
+      return; // Skip test for implementations that don't support namespaces
+    }
+
+    String namespace1 = "list_ns_1_" + UUID.randomUUID().toString().replace("-", "");
+    String namespace2 = "list_ns_2_" + UUID.randomUUID().toString().replace("-", "");
+
+    // Create namespaces
+    spark.sql("CREATE NAMESPACE " + catalogName + "." + namespace1);
+    spark.sql("CREATE NAMESPACE " + catalogName + "." + namespace2);
+
+    // List namespaces
+    Dataset<Row> namespaces = spark.sql("SHOW NAMESPACES IN " + catalogName);
+    List<Row> nsList = namespaces.collectAsList();
+
+    boolean foundNs1 = false;
+    boolean foundNs2 = false;
+    for (Row row : nsList) {
+      String ns = row.getString(0);
+      if (namespace1.equals(ns)) {
+        foundNs1 = true;
+      }
+      if (namespace2.equals(ns)) {
+        foundNs2 = true;
+      }
+    }
+    assertTrue(foundNs1);
+    assertTrue(foundNs2);
+  }
+
+  @Test
+  public void testNamespaceMetadata() throws Exception {
+    if (!supportsNamespace()) {
+      return; // Skip test for implementations that don't support namespaces
+    }
+
+    String namespaceName = "metadata_ns_" + UUID.randomUUID().toString().replace("-", "");
+
+    // Create namespace with properties
+    spark.sql(
+        "CREATE NAMESPACE "
+            + catalogName
+            + "."
+            + namespaceName
+            + " WITH DBPROPERTIES ('key1'='value1', 'key2'='value2')");
+
+    // Describe namespace
+    Dataset<Row> properties =
+        spark.sql("DESCRIBE NAMESPACE EXTENDED " + catalogName + "." + namespaceName);
+    List<Row> propList = properties.collectAsList();
+
+    // Verify properties are returned (exact format may vary by implementation)
+    assertNotNull(propList);
+    assertTrue(propList.size() > 0);
+  }
+
+  @Test
+  public void testNamespaceWithTables() throws Exception {
+    if (!supportsNamespace()) {
+      return; // Skip test for implementations that don't support namespaces
+    }
+
+    String namespaceName = "tables_ns_" + UUID.randomUUID().toString().replace("-", "");
+    String tableName = generateTableName("ns_table");
+
+    // Create namespace
+    spark.sql("CREATE NAMESPACE " + catalogName + "." + namespaceName);
+
+    // Create table in namespace
+    spark.sql(
+        "CREATE TABLE "
+            + catalogName
+            + "."
+            + namespaceName
+            + "."
+            + tableName
+            + " (id BIGINT NOT NULL, name STRING)");
+
+    // Insert data
+    spark.sql(
+        "INSERT INTO "
+            + catalogName
+            + "."
+            + namespaceName
+            + "."
+            + tableName
+            + " VALUES (1, 'test')");
+
+    // Query table
+    Dataset<Row> result =
+        spark.sql("SELECT * FROM " + catalogName + "." + namespaceName + "." + tableName);
+    assertEquals(1, result.count());
+
+    // List tables in namespace
+    Dataset<Row> tables = spark.sql("SHOW TABLES IN " + catalogName + "." + namespaceName);
+    List<Row> tableList = tables.collectAsList();
+    assertEquals(1, tableList.size());
+    assertEquals(tableName, tableList.get(0).getString(1));
+  }
+
+  @Test
+  public void testCascadeDropNamespace() throws Exception {
+    if (!supportsNamespace()) {
+      return; // Skip test for implementations that don't support namespaces
+    }
+
+    String namespaceName = "cascade_ns_" + UUID.randomUUID().toString().replace("-", "");
+    String tableName = generateTableName("cascade_table");
+
+    // Create namespace
+    spark.sql("CREATE NAMESPACE " + catalogName + "." + namespaceName);
+
+    // Create table in namespace
+    spark.sql(
+        "CREATE TABLE "
+            + catalogName
+            + "."
+            + namespaceName
+            + "."
+            + tableName
+            + " (id BIGINT NOT NULL)");
+
+    // Try to drop namespace without CASCADE (should fail)
+    assertThrows(
+        Exception.class,
+        () -> {
+          spark.sql("DROP NAMESPACE " + catalogName + "." + namespaceName);
+        });
+
+    // Drop namespace with CASCADE (should succeed)
+    spark.sql("DROP NAMESPACE " + catalogName + "." + namespaceName + " CASCADE");
+
+    // Verify namespace is gone
+    Dataset<Row> namespaces = spark.sql("SHOW NAMESPACES IN " + catalogName);
+    List<Row> nsList = namespaces.collectAsList();
+    boolean found = false;
+    for (Row row : nsList) {
+      if (namespaceName.equals(row.getString(0))) {
+        found = true;
+        break;
+      }
+    }
+    assertFalse(found);
+  }
+
+  @Test
+  public void testTwoPartIdentifier() throws Exception {
+    String tableName = generateTableName("two_part_test");
+
+    // Set default catalog to Lance
+    spark.sql("SET spark.sql.defaultCatalog=" + catalogName);
+
+    // Create table using namespace.table (2-part identifier)
+    spark.sql("CREATE TABLE default." + tableName + " (id BIGINT NOT NULL, name STRING)");
+
+    // Show tables using namespace
+    Dataset<Row> tables = spark.sql("SHOW TABLES IN default");
+    boolean found =
+        tables.collectAsList().stream().anyMatch(row -> tableName.equals(row.getString(1)));
+    assertTrue(found);
+
+    // Describe table using namespace.table
+    Dataset<Row> description = spark.sql("DESCRIBE TABLE default." + tableName);
+    assertEquals(2, description.count());
+
+    // Insert and select using namespace.table
+    spark.sql("INSERT INTO default." + tableName + " VALUES (1, 'test')");
+    Dataset<Row> result = spark.sql("SELECT * FROM default." + tableName);
+    assertEquals(1, result.count());
+
+    Row row = result.collectAsList().get(0);
+    assertEquals(1L, row.getLong(0));
+    assertEquals("test", row.getString(1));
+  }
+
+  @Test
+  public void testOnePartIdentifier() throws Exception {
+    String tableName = generateTableName("one_part_test");
+
+    // Set default catalog and use namespace
+    spark.sql("SET spark.sql.defaultCatalog=" + catalogName);
+    spark.sql("USE default");
+
+    // Create table using just table name (1-part identifier)
+    spark.sql("CREATE TABLE " + tableName + " (id BIGINT NOT NULL, value DOUBLE)");
+
+    // Show tables in current namespace
+    Dataset<Row> tables = spark.sql("SHOW TABLES");
+    boolean found =
+        tables.collectAsList().stream().anyMatch(row -> tableName.equals(row.getString(1)));
+    assertTrue(found);
+
+    // Describe table using just table name
+    Dataset<Row> description = spark.sql("DESCRIBE TABLE " + tableName);
+    assertEquals(2, description.count());
+
+    // Insert and select using just table name
+    spark.sql("INSERT INTO " + tableName + " VALUES (42, 3.14)");
+    Dataset<Row> result = spark.sql("SELECT * FROM " + tableName);
+    assertEquals(1, result.count());
+
+    Row row = result.collectAsList().get(0);
+    assertEquals(42L, row.getLong(0));
+    assertEquals(3.14, row.getDouble(1), 0.001);
   }
 }

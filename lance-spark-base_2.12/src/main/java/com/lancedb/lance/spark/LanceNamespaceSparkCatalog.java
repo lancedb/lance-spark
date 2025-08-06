@@ -20,6 +20,7 @@ import com.lancedb.lance.namespace.model.CreateTableRequest;
 import com.lancedb.lance.namespace.model.CreateTableResponse;
 import com.lancedb.lance.namespace.model.DescribeTableRequest;
 import com.lancedb.lance.namespace.model.DescribeTableResponse;
+import com.lancedb.lance.namespace.model.DropNamespaceRequest;
 import com.lancedb.lance.namespace.model.DropTableRequest;
 import com.lancedb.lance.namespace.model.JsonArrowSchema;
 import com.lancedb.lance.namespace.model.ListTablesRequest;
@@ -28,14 +29,20 @@ import com.lancedb.lance.namespace.util.PropertyUtil;
 import com.lancedb.lance.spark.internal.LanceDatasetAdapter;
 import com.lancedb.lance.spark.utils.Optional;
 import com.lancedb.lance.spark.utils.SchemaConverter;
+import com.lancedb.lance.spark.utils.SparkUtil;
 
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowStreamWriter;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
 import org.apache.spark.sql.connector.catalog.Identifier;
+import org.apache.spark.sql.connector.catalog.NamespaceChange;
+import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
 import org.apache.spark.sql.connector.catalog.Table;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.apache.spark.sql.connector.catalog.TableChange;
@@ -47,12 +54,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class LanceNamespaceSparkCatalog implements TableCatalog {
+public class LanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   private static final Logger logger = Logger.getLogger(LanceNamespaceSparkCatalog.class.getName());
 
@@ -77,9 +87,16 @@ public class LanceNamespaceSparkCatalog implements TableCatalog {
   /** Supply in CREATE TABLE options to supply a different location to use for the table */
   private static final String CREATE_TABLE_PROPERTY_LOCATION = "location";
 
+  /** Parent prefix configuration for multi-level namespaces like Hive3 */
+  private static final String CONFIG_PARENT = "parent";
+
+  private static final String CONFIG_PARENT_DELIMITER = "parent_delimiter";
+  private static final String CONFIG_PARENT_DELIMITER_DEFAULT = ".";
+
   private LanceNamespace namespace;
   private String name;
   private Optional<String> extraLevel;
+  private Optional<List<String>> parentPrefix;
 
   @Override
   public void initialize(String name, CaseInsensitiveStringMap options) {
@@ -90,8 +107,24 @@ public class LanceNamespaceSparkCatalog implements TableCatalog {
     }
     String impl = PropertyUtil.propertyAsString(options, CONFIG_IMPL);
 
-    // Initialize the namespace first
-    this.namespace = LanceNamespaces.connect(impl, options, null, LanceDatasetAdapter.allocator);
+    // Handle parent prefix configuration
+    if (options.containsKey(CONFIG_PARENT)) {
+      String parent = PropertyUtil.propertyAsString(options, CONFIG_PARENT);
+      String delimiter =
+          PropertyUtil.propertyAsString(
+              options, CONFIG_PARENT_DELIMITER, CONFIG_PARENT_DELIMITER_DEFAULT);
+      List<String> parentParts = Arrays.asList(parent.split(Pattern.quote(delimiter)));
+      this.parentPrefix = Optional.of(parentParts);
+    } else {
+      this.parentPrefix = Optional.empty();
+    }
+
+    // Initialize the namespace with proper configuration
+    Map<String, String> namespaceOptions = new HashMap<>(options);
+    Configuration hadoopConf = SparkUtil.hadoopConfCatalogOverrides(SparkSession.active(), name);
+
+    this.namespace =
+        LanceNamespaces.connect(impl, namespaceOptions, hadoopConf, LanceDatasetAdapter.allocator);
 
     // Handle extra level name configuration
     if (options.containsKey(CONFIG_EXTRA_LEVEL)) {
@@ -111,8 +144,177 @@ public class LanceNamespaceSparkCatalog implements TableCatalog {
   }
 
   @Override
+  public void alterNamespace(String[] namespace, NamespaceChange... changes)
+      throws NoSuchNamespaceException {
+    // Namespace alteration is not supported in the current API
+    throw new UnsupportedOperationException("Namespace alteration is not supported");
+  }
+
+  @Override
+  public String[][] listNamespaces() throws NoSuchNamespaceException {
+    // List root level namespaces
+    com.lancedb.lance.namespace.model.ListNamespacesRequest request =
+        new com.lancedb.lance.namespace.model.ListNamespacesRequest();
+
+    // Add parent prefix to empty namespace (root)
+    if (parentPrefix.isPresent()) {
+      request.setId(parentPrefix.get());
+    }
+
+    try {
+      com.lancedb.lance.namespace.model.ListNamespacesResponse response =
+          namespace.listNamespaces(request);
+
+      List<String[]> result = new ArrayList<>();
+      for (String ns : response.getNamespaces()) {
+        // For single-level namespace names, create array
+        String[] nsArray = new String[] {ns};
+
+        // Note: parent prefix removal is not needed here as the response
+        // only contains the namespace name, not the full path
+
+        // Add extra level if configured
+        if (extraLevel.isPresent()) {
+          String[] withExtra = new String[2];
+          withExtra[0] = extraLevel.get();
+          withExtra[1] = ns;
+          nsArray = withExtra;
+        }
+
+        result.add(nsArray);
+      }
+
+      return result.toArray(new String[0][]);
+    } catch (Exception e) {
+      throw new NoSuchNamespaceException(new String[0]);
+    }
+  }
+
+  @Override
+  public String[][] listNamespaces(String[] parent) throws NoSuchNamespaceException {
+    // Remove extra level and add parent prefix
+    String[] actualParent = removeExtraLevelsFromNamespace(parent);
+    actualParent = addParentPrefix(actualParent);
+
+    com.lancedb.lance.namespace.model.ListNamespacesRequest request =
+        new com.lancedb.lance.namespace.model.ListNamespacesRequest();
+    request.setId(Arrays.asList(actualParent));
+
+    try {
+      com.lancedb.lance.namespace.model.ListNamespacesResponse response =
+          namespace.listNamespaces(request);
+
+      List<String[]> result = new ArrayList<>();
+      for (String ns : response.getNamespaces()) {
+        // For single-level namespace names, create full path
+        String[] nsArray = new String[parent.length + 1];
+        System.arraycopy(parent, 0, nsArray, 0, parent.length);
+        nsArray[parent.length] = ns;
+
+        result.add(nsArray);
+      }
+
+      return result.toArray(new String[0][]);
+    } catch (Exception e) {
+      throw new NoSuchNamespaceException(parent);
+    }
+  }
+
+  @Override
+  public boolean namespaceExists(String[] namespace) {
+    // If the namespace is exactly the extra level, it exists as a virtual namespace
+    if (extraLevel.isPresent() && namespace.length == 1 && extraLevel.get().equals(namespace[0])) {
+      return true;
+    }
+
+    // Remove extra levels and add parent prefix
+    String[] actualNamespace = removeExtraLevelsFromNamespace(namespace);
+    actualNamespace = addParentPrefix(actualNamespace);
+
+    com.lancedb.lance.namespace.model.NamespaceExistsRequest request =
+        new com.lancedb.lance.namespace.model.NamespaceExistsRequest();
+    request.setId(Arrays.asList(actualNamespace));
+
+    try {
+      this.namespace.namespaceExists(request);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  @Override
+  public Map<String, String> loadNamespaceMetadata(String[] namespace)
+      throws NoSuchNamespaceException {
+    // Remove extra levels and add parent prefix
+    String[] actualNamespace = removeExtraLevelsFromNamespace(namespace);
+    actualNamespace = addParentPrefix(actualNamespace);
+
+    com.lancedb.lance.namespace.model.DescribeNamespaceRequest request =
+        new com.lancedb.lance.namespace.model.DescribeNamespaceRequest();
+    request.setId(Arrays.asList(actualNamespace));
+
+    try {
+      com.lancedb.lance.namespace.model.DescribeNamespaceResponse response =
+          this.namespace.describeNamespace(request);
+
+      Map<String, String> properties = response.getProperties();
+      return properties != null ? properties : Collections.emptyMap();
+    } catch (Exception e) {
+      throw new NoSuchNamespaceException(namespace);
+    }
+  }
+
+  @Override
+  public void createNamespace(String[] namespace, Map<String, String> properties)
+      throws NamespaceAlreadyExistsException {
+    // Remove extra levels and add parent prefix
+    String[] actualNamespace = removeExtraLevelsFromNamespace(namespace);
+    actualNamespace = addParentPrefix(actualNamespace);
+
+    com.lancedb.lance.namespace.model.CreateNamespaceRequest request =
+        new com.lancedb.lance.namespace.model.CreateNamespaceRequest();
+    request.setId(Arrays.asList(actualNamespace));
+
+    if (properties != null && !properties.isEmpty()) {
+      request.setProperties(properties);
+    }
+
+    try {
+      this.namespace.createNamespace(request);
+    } catch (Exception e) {
+      if (e.getMessage() != null && e.getMessage().contains("already exists")) {
+        throw new NamespaceAlreadyExistsException(namespace);
+      }
+      throw new RuntimeException("Failed to create namespace", e);
+    }
+  }
+
+  @Override
+  public boolean dropNamespace(String[] namespace, boolean cascade)
+      throws NoSuchNamespaceException {
+    // Remove extra levels and add parent prefix
+    String[] actualNamespace = removeExtraLevelsFromNamespace(namespace);
+    actualNamespace = addParentPrefix(actualNamespace);
+
+    DropNamespaceRequest request = new DropNamespaceRequest();
+    request.setId(Arrays.asList(actualNamespace));
+
+    // Set behavior based on cascade flag - let the Lance namespace API handle the logic
+    if (cascade) {
+      request.setBehavior(DropNamespaceRequest.BehaviorEnum.CASCADE);
+    } else {
+      request.setBehavior(DropNamespaceRequest.BehaviorEnum.RESTRICT);
+    }
+
+    this.namespace.dropNamespace(request);
+    return true;
+  }
+
+  @Override
   public Identifier[] listTables(String[] namespace) throws NoSuchNamespaceException {
     String[] actualNamespace = removeExtraLevelsFromNamespace(namespace);
+    actualNamespace = addParentPrefix(actualNamespace);
 
     ListTablesRequest request = new ListTablesRequest();
     request.setId(Arrays.stream(actualNamespace).collect(Collectors.toList()));
@@ -127,39 +329,55 @@ public class LanceNamespaceSparkCatalog implements TableCatalog {
   }
 
   @Override
+  public boolean tableExists(Identifier ident) {
+    // Transform identifier for API call
+    Identifier actualIdent = transformIdentifierForApi(ident);
+
+    com.lancedb.lance.namespace.model.TableExistsRequest request =
+        new com.lancedb.lance.namespace.model.TableExistsRequest();
+    for (String part : actualIdent.namespace()) {
+      request.addIdItem(part);
+    }
+    request.addIdItem(actualIdent.name());
+
+    try {
+      this.namespace.tableExists(request);
+      return true;
+    } catch (Exception e) {
+      return false;
+    }
+  }
+
+  @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
-    // Remove extra levels from the identifier
-    Identifier actualIdent = removeExtraLevelsFromId(ident);
+    // Transform identifier for API call
+    Identifier actualIdent = transformIdentifierForApi(ident);
 
     DescribeTableRequest request = new DescribeTableRequest();
     for (String part : actualIdent.namespace()) {
       request.addIdItem(part);
     }
     request.addIdItem(actualIdent.name());
-    try {
-      DescribeTableResponse response = namespace.describeTable(request);
-      String location = response.getLocation();
-      if (location == null || location.isEmpty()) {
-        throw new NoSuchTableException(ident);
-      }
-
-      LanceConfig config = LanceConfig.from(location);
-      Optional<StructType> schema = LanceDatasetAdapter.getSchema(config);
-      if (!schema.isPresent()) {
-        throw new NoSuchTableException(ident);
-      }
-
-      return new LanceDataset(config, schema.get());
-    } catch (Exception e) {
+    DescribeTableResponse response = namespace.describeTable(request);
+    String location = response.getLocation();
+    if (location == null || location.isEmpty()) {
       throw new NoSuchTableException(ident);
     }
+
+    LanceConfig config = LanceConfig.from(location);
+    Optional<StructType> schema = LanceDatasetAdapter.getSchema(config);
+    if (!schema.isPresent()) {
+      throw new NoSuchTableException(ident);
+    }
+
+    return new LanceDataset(config, schema.get());
   }
 
   @Override
   public Table createTable(
       Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
       throws TableAlreadyExistsException, NoSuchNamespaceException {
-    Identifier tableId = removeExtraLevelsFromId(ident);
+    Identifier tableId = transformIdentifierForApi(ident);
     CreateTableRequest createRequest = new CreateTableRequest();
     for (String part : tableId.namespace()) {
       createRequest.addIdItem(part);
@@ -190,7 +408,7 @@ public class LanceNamespaceSparkCatalog implements TableCatalog {
   @Override
   public boolean dropTable(Identifier ident) {
     try {
-      Identifier tableId = removeExtraLevelsFromId(ident);
+      Identifier tableId = transformIdentifierForApi(ident);
       DropTableRequest dropRequest = new DropTableRequest();
       for (String part : tableId.namespace()) {
         dropRequest.addIdItem(part);
@@ -222,6 +440,13 @@ public class LanceNamespaceSparkCatalog implements TableCatalog {
 
     String[] newNamespace = removeExtraLevelsFromNamespace(identifier.namespace());
     return Identifier.of(newNamespace, identifier.name());
+  }
+
+  /** Transforms an identifier for API calls by removing extra levels and adding parent prefix. */
+  private Identifier transformIdentifierForApi(Identifier identifier) {
+    Identifier transformed = removeExtraLevelsFromId(identifier);
+    String[] namespace = addParentPrefix(transformed.namespace());
+    return Identifier.of(namespace, transformed.name());
   }
 
   /**
@@ -298,5 +523,50 @@ public class LanceNamespaceSparkCatalog implements TableCatalog {
               + "falling back to flat table structure with extra_level=default");
       return Optional.of("default");
     }
+  }
+
+  /**
+   * Adds parent prefix to namespace array for API calls. For example, with
+   * parentPrefix=["catalog1"], ["ns1"] becomes ["catalog1", "ns1"]
+   */
+  private String[] addParentPrefix(String[] namespace) {
+    if (parentPrefix.isEmpty()) {
+      return namespace;
+    }
+
+    List<String> result = new ArrayList<>(parentPrefix.get());
+    result.addAll(Arrays.asList(namespace));
+    return result.toArray(new String[0]);
+  }
+
+  /**
+   * Removes parent prefix from namespace array for Spark. For example, with
+   * parentPrefix=["catalog1"], ["catalog1", "ns1"] becomes ["ns1"]
+   */
+  private String[] removeParentPrefix(String[] namespace) {
+    if (parentPrefix.isEmpty()) {
+      return namespace;
+    }
+
+    List<String> prefix = parentPrefix.get();
+    if (namespace.length >= prefix.size()) {
+      // Check if namespace starts with the parent prefix
+      boolean hasPrefix = true;
+      for (int i = 0; i < prefix.size(); i++) {
+        if (!prefix.get(i).equals(namespace[i])) {
+          hasPrefix = false;
+          break;
+        }
+      }
+
+      if (hasPrefix) {
+        // Remove the prefix
+        String[] result = new String[namespace.length - prefix.size()];
+        System.arraycopy(namespace, prefix.size(), result, 0, result.length);
+        return result;
+      }
+    }
+
+    return namespace;
   }
 }
