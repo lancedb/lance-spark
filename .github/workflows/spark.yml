@@ -18,6 +18,7 @@ on:
       - main
     paths-ignore:
       - 'docs/**'
+      - 'README.md'
   pull_request:
     types:
       - opened
@@ -26,6 +27,7 @@ on:
       - reopened
     paths-ignore:
       - 'docs/**'
+      - 'README.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
