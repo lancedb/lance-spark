@@ -45,7 +45,7 @@ class LanceArrowUtilsSuite extends AnyFunSuite {
 
   test("unsigned long") {
     roundtrip(BooleanType, LanceConstant.ROW_ID)
-    val arrowType = LanceArrowUtils.toArrowField(LanceConstant.ROW_ID, LongType, true, "Beijing")
+    val arrowType = LanceArrowUtils.toArrowField(LanceConstant.ROW_ID, LongType, true, null, "Beijing")
     assert(arrowType.getType.asInstanceOf[ArrowType.Int].getBitWidth === 64)
     assert(!arrowType.getType.asInstanceOf[ArrowType.Int].getIsSigned)
   }
