@@ -14,6 +14,7 @@
 package com.lancedb.lance.spark;
 
 import com.lancedb.lance.namespace.LanceNamespace;
+import com.lancedb.lance.namespace.LanceNamespaceException;
 import com.lancedb.lance.namespace.LanceNamespaces;
 import com.lancedb.lance.namespace.ListTablesIterable;
 import com.lancedb.lance.namespace.model.CreateTableRequest;
@@ -49,6 +50,8 @@ import org.apache.spark.sql.connector.catalog.TableChange;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -58,13 +61,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class LanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespaces {
 
-  private static final Logger logger = Logger.getLogger(LanceNamespaceSparkCatalog.class.getName());
+  private static final Logger logger = LoggerFactory.getLogger(LanceNamespaceSparkCatalog.class);
 
   /** Used to specify the namespace implementation to use */
   private static final String CONFIG_IMPL = "impl";
@@ -358,13 +360,24 @@ public class LanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespa
       request.addIdItem(part);
     }
     request.addIdItem(actualIdent.name());
-    DescribeTableResponse response = namespace.describeTable(request);
-    String location = response.getLocation();
-    if (location == null || location.isEmpty()) {
-      throw new NoSuchTableException(ident);
+
+    DescribeTableResponse response;
+    try {
+      response = namespace.describeTable(request);
+    } catch (LanceNamespaceException e) {
+      if (e.getCode() == 404) {
+        throw new NoSuchTableException(ident);
+      }
+      throw e;
     }
 
-    LanceConfig config = LanceConfig.from(location);
+    // Pass storage options from the response to LanceConfig, with fallback to empty map
+    Map<String, String> storageOptions = response.getStorageOptions();
+    if (storageOptions == null) {
+      storageOptions = new HashMap<>();
+    }
+
+    LanceConfig config = LanceConfig.from(storageOptions, response.getLocation());
     Optional<StructType> schema = LanceDatasetAdapter.getSchema(config);
     if (!schema.isPresent()) {
       throw new NoSuchTableException(ident);
@@ -396,7 +409,14 @@ public class LanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespa
     createRequest.setSchema(jsonSchema);
     byte[] emptyArrowData = createEmptyArrowIpcStream(jsonSchema);
     CreateTableResponse response = namespace.createTable(createRequest, emptyArrowData);
-    LanceConfig config = LanceConfig.from(response.getLocation());
+
+    // Pass storage options from the response to LanceConfig, with fallback to empty map
+    Map<String, String> storageOptions = response.getStorageOptions();
+    if (storageOptions == null) {
+      storageOptions = new HashMap<>();
+    }
+
+    LanceConfig config = LanceConfig.from(storageOptions, response.getLocation());
     return new LanceDataset(config, schema);
   }
 
