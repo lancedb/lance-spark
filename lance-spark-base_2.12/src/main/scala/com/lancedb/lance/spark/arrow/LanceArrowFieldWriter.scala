@@ -18,6 +18,17 @@ import org.apache.spark.sql.catalyst.expressions.SpecializedGetters
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.sql.util.LanceArrowUtils
 
+/**
+ * Base class for Arrow field writers.
+ *
+ * This class is copied from Apache Spark's ArrowWriter.scala
+ * (https://github.com/apache/spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/execution/arrow/ArrowWriter.scala)
+ * to support converting Spark DataFrame Array<Float/Double> columns to Arrow FixedSizeList
+ * for vector embeddings and ML workloads in Lance.
+ *
+ * This base class defines the interface for writing individual fields from
+ * Spark's InternalRow format to Arrow vectors.
+ */
 abstract private[arrow] class LanceArrowFieldWriter {
   def valueVector: ValueVector
   def name: String = valueVector.getField().getName()

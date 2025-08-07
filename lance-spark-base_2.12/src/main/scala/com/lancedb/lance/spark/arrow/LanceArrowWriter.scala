@@ -23,6 +23,20 @@ import org.apache.spark.sql.util.LanceArrowUtils
 
 import scala.jdk.CollectionConverters._
 
+/**
+ * Custom ArrowWriter implementation that supports converting Spark DataFrame
+ * Array<Float/Double> columns to Arrow FixedSizeList for vector embeddings.
+ *
+ * This class is copied and modified from Apache Spark's ArrowWriter
+ * (https://github.com/apache/spark/blob/master/sql/catalyst/src/main/scala/org/apache/spark/sql/execution/arrow/ArrowWriter.scala)
+ * to enable writing vector columns (embeddings) as FixedSizeList, which is required for
+ * Lance's vector indexing and similarity search capabilities.
+ *
+ * Key modifications from Spark's ArrowWriter:
+ * - Detects when an Arrow field is FixedSizeListVector (created by LanceArrowUtils)
+ * - Uses custom FixedSizeListWriter to write data directly to FixedSizeListVector
+ * - Validates vector dimensions during write
+ */
 object LanceArrowWriter {
   def create(
       schema: StructType,
@@ -112,6 +126,10 @@ object LanceArrowWriter {
   }
 }
 
+/**
+ * Writer that converts Spark InternalRow data to Arrow format.
+ * Copied from Spark's ArrowWriter to support custom field writers for FixedSizeList.
+ */
 class LanceArrowWriter(root: VectorSchemaRoot, fields: Array[LanceArrowFieldWriter]) {
   def write(row: InternalRow): Unit = {
     var i = 0
@@ -132,6 +150,11 @@ class LanceArrowWriter(root: VectorSchemaRoot, fields: Array[LanceArrowFieldWrit
   }
 }
 
+/**
+ * Custom writer for FixedSizeList vectors (used for ML embeddings/vectors).
+ * This is a new class not present in Spark's ArrowWriter.
+ * It handles writing Spark ArrayType data to Arrow FixedSizeListVector for vector columns.
+ */
 private[arrow] class FixedSizeListWriter(
     val valueVector: FixedSizeListVector,
     val elementWriter: LanceArrowFieldWriter) extends LanceArrowFieldWriter {
@@ -167,6 +190,11 @@ private[arrow] class FixedSizeListWriter(
     elementWriter.reset()
   }
 }
+
+// ================================================================================
+// The following writer classes are copied from Spark's ArrowWriter with no modifications.
+// They handle conversion from Spark's InternalRow format to Arrow vectors for basic types.
+// ================================================================================
 
 private[arrow] class BooleanWriter(val valueVector: BitVector) extends LanceArrowFieldWriter {
   override def setNull(): Unit = {}
