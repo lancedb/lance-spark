@@ -16,18 +16,6 @@ and namespace-specific options:
 
 ### Directory Namespace
 
-=== "PySpark"
-    ```python
-    from pyspark.sql import SparkSession
-    
-    spark = SparkSession.builder \
-        .appName("lance-dir-example") \
-        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog") \
-        .config("spark.sql.catalog.lance.impl", "dir") \
-        .config("spark.sql.catalog.lance.root", "/path/to/lance/database") \
-        .getOrCreate()
-    ```
-
 === "Scala"
     ```scala
     import org.apache.spark.sql.SparkSession
@@ -69,6 +57,59 @@ and namespace-specific options:
       --conf spark.sql.catalog.lance.impl=dir \
       --conf spark.sql.catalog.lance.root=/path/to/lance/database \
       your-application.jar
+    ```
+
+#### Directory Configuration Parameters
+
+| Parameter                              | Required | Description                                                  |
+|----------------------------------------|----------|--------------------------------------------------------------|
+| `spark.sql.catalog.{name}.root`        | ✗        | Storage root location (default: current directory)           |
+| `spark.sql.catalog.{name}.storage.*`   | ✗        | Additional OpenDAL storage configuration options             |
+| `spark.sql.catalog.{name}.extra_level` | ✗        | Virtual level for 2-level namespaces (auto-set to `default`) |
+
+Example settings:
+
+=== "Local Storage"
+    ```python
+    from pyspark.sql import SparkSession
+
+    spark = SparkSession.builder \
+        .appName("lance-dir-local-example") \
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog") \
+        .config("spark.sql.catalog.lance.impl", "dir") \
+        .config("spark.sql.catalog.lance.root", "/path/to/lance/database") \
+        .getOrCreate()
+    ```
+
+=== "S3"
+    ```python
+    from pyspark.sql import SparkSession
+
+    spark = SparkSession.builder \
+        .appName("lance-dir-minio-example") \
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog") \
+        .config("spark.sql.catalog.lance.impl", "dir") \
+        .config("spark.sql.catalog.lance.root", "s3://bucket-name/lance-data") \
+        .config("spark.sql.catalog.lance.storage.access_key_id", "abc") \
+        .config("spark.sql.catalog.lance.storage.secret_access_key", "def")
+        .config("spark.sql.catalog.lance.storage.session_token", "ghi") \
+        .getOrCreate()
+    ```    
+
+=== "MinIO"
+    ```python
+    from pyspark.sql import SparkSession
+
+    spark = SparkSession.builder \
+        .appName("lance-dir-minio-example") \
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog") \
+        .config("spark.sql.catalog.lance.impl", "dir") \
+        .config("spark.sql.catalog.lance.root", "s3://bucket-name/lance-data") \
+        .config("spark.sql.catalog.lance.storage.endpoint", "http://minio:9000") \
+        .config("spark.sql.catalog.lance.storage.aws_allow_http", "true") \
+        .config("spark.sql.catalog.lance.storage.access_key_id", "admin") \
+        .config("spark.sql.catalog.lance.storage.secret_access_key", "password") \
+        .getOrCreate()
     ```
 
 ### REST Namespace
@@ -134,10 +175,175 @@ Here we use LanceDB Cloud as an example of the REST namespace:
       your-application.jar
     ```
 
-### Note on Namespace Levels
+#### REST Configuration Parameters
+
+| Parameter                                    | Required | Description                                                                     |
+|----------------------------------------------|----------|---------------------------------------------------------------------------------|
+| `spark.sql.catalog.{name}.uri`              | ✓        | REST API endpoint URL (e.g., `https://api.lancedb.com`)                       |
+| `spark.sql.catalog.{name}.headers.*`        | ✗        | HTTP headers for authentication (e.g., `headers.x-api-key`)                   |
+
+### AWS Glue Namespace
+
+AWS Glue is Amazon's managed metastore service that provides a centralized catalog for your data assets:
+
+=== "PySpark"
+    ```python
+    spark = SparkSession.builder \
+        .appName("lance-glue-example") \
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog") \
+        .config("spark.sql.catalog.lance.impl", "glue") \
+        .config("spark.sql.catalog.lance.region", "us-east-1") \
+        .config("spark.sql.catalog.lance.catalog_id", "123456789012") \
+        .config("spark.sql.catalog.lance.access_key_id", "your-access-key") \
+        .config("spark.sql.catalog.lance.secret_access_key", "your-secret-key") \
+        .config("spark.sql.catalog.lance.root", "s3://your-bucket/lance") \
+        .getOrCreate()
+    ```
+
+=== "Scala"
+    ```scala
+    val spark = SparkSession.builder()
+        .appName("lance-glue-example")
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+        .config("spark.sql.catalog.lance.impl", "glue")
+        .config("spark.sql.catalog.lance.region", "us-east-1")
+        .config("spark.sql.catalog.lance.catalog_id", "123456789012")
+        .config("spark.sql.catalog.lance.access_key_id", "your-access-key")
+        .config("spark.sql.catalog.lance.secret_access_key", "your-secret-key")
+        .config("spark.sql.catalog.lance.root", "s3://your-bucket/lance")
+        .getOrCreate()
+    ```
+
+=== "Java"
+    ```java
+    SparkSession spark = SparkSession.builder()
+        .appName("lance-glue-example")
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+        .config("spark.sql.catalog.lance.impl", "glue")
+        .config("spark.sql.catalog.lance.region", "us-east-1")
+        .config("spark.sql.catalog.lance.catalog_id", "123456789012")
+        .config("spark.sql.catalog.lance.access_key_id", "your-access-key")
+        .config("spark.sql.catalog.lance.secret_access_key", "your-secret-key")
+        .config("spark.sql.catalog.lance.root", "s3://your-bucket/lance")
+        .getOrCreate();
+    ```
+
+#### Glue Configuration Parameters
+
+| Parameter                                    | Required | Description                                                                     |
+|----------------------------------------------|----------|---------------------------------------------------------------------------------|
+| `spark.sql.catalog.{name}.region`            | ✓        | AWS region for Glue operations (e.g., `us-east-1`)                              |
+| `spark.sql.catalog.{name}.catalog_id`        | ✗        | Glue catalog ID, defaults to the AWS account ID of the caller                   |
+| `spark.sql.catalog.{name}.endpoint`          | ✗        | Custom Glue service endpoint for connecting to compatible metastores            |
+| `spark.sql.catalog.{name}.access_key_id`     | ✗        | AWS access key ID for static credentials                                        |
+| `spark.sql.catalog.{name}.secret_access_key` | ✗        | AWS secret access key for static credentials                                    |
+| `spark.sql.catalog.{name}.session_token`     | ✗        | AWS session token for temporary credentials                                     |
+| `spark.sql.catalog.{name}.root`              | ✗        | Storage root location (e.g., `s3://bucket/path`), defaults to current directory |
+| `spark.sql.catalog.{name}.storage.*`         | ✗        | Additional storage configuration options                                        |
+
+### Apache Hive Namespace
+
+Lance supports both Hive 2.x and Hive 3.x metastores for metadata management:
+
+#### Hive 3.x Namespace
+
+=== "PySpark"
+    ```python
+    spark = SparkSession.builder \
+        .appName("lance-hive3-example") \
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog") \
+        .config("spark.sql.catalog.lance.impl", "hive3") \
+        .config("spark.sql.catalog.lance.parent", "hive") \
+        .config("spark.sql.catalog.lance.parent_delimiter", ".") \
+        .config("spark.sql.catalog.lance.hadoop.hive.metastore.uris", "thrift://metastore:9083") \
+        .config("spark.sql.catalog.lance.client.pool-size", "5") \
+        .config("spark.sql.catalog.lance.root", "hdfs://namenode:8020/lance") \
+        .getOrCreate()
+    ```
+
+=== "Scala"
+    ```scala
+    val spark = SparkSession.builder()
+        .appName("lance-hive3-example")
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+        .config("spark.sql.catalog.lance.impl", "hive3")
+        .config("spark.sql.catalog.lance.parent", "hive")
+        .config("spark.sql.catalog.lance.parent_delimiter", ".")
+        .config("spark.sql.catalog.lance.hadoop.hive.metastore.uris", "thrift://metastore:9083")
+        .config("spark.sql.catalog.lance.client.pool-size", "5")
+        .config("spark.sql.catalog.lance.root", "hdfs://namenode:8020/lance")
+        .getOrCreate()
+    ```
+
+=== "Java"
+    ```java
+    SparkSession spark = SparkSession.builder()
+        .appName("lance-hive3-example")
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+        .config("spark.sql.catalog.lance.impl", "hive3")
+        .config("spark.sql.catalog.lance.parent", "hive")
+        .config("spark.sql.catalog.lance.parent_delimiter", ".")
+        .config("spark.sql.catalog.lance.hadoop.hive.metastore.uris", "thrift://metastore:9083")
+        .config("spark.sql.catalog.lance.client.pool-size", "5")
+        .config("spark.sql.catalog.lance.root", "hdfs://namenode:8020/lance")
+        .getOrCreate();
+    ```
+
+#### Hive 2.x Namespace
+
+=== "PySpark"
+    ```python
+    spark = SparkSession.builder \
+        .appName("lance-hive2-example") \
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog") \
+        .config("spark.sql.catalog.lance.impl", "hive2") \
+        .config("spark.sql.catalog.lance.hadoop.hive.metastore.uris", "thrift://metastore:9083") \
+        .config("spark.sql.catalog.lance.client.pool-size", "3") \
+        .config("spark.sql.catalog.lance.root", "hdfs://namenode:8020/lance") \
+        .getOrCreate()
+    ```
+
+=== "Scala"
+    ```scala
+    val spark = SparkSession.builder()
+        .appName("lance-hive2-example")
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+        .config("spark.sql.catalog.lance.impl", "hive2")
+        .config("spark.sql.catalog.lance.hadoop.hive.metastore.uris", "thrift://metastore:9083")
+        .config("spark.sql.catalog.lance.client.pool-size", "3")
+        .config("spark.sql.catalog.lance.root", "hdfs://namenode:8020/lance")
+        .getOrCreate()
+    ```
+
+=== "Java"
+    ```java
+    SparkSession spark = SparkSession.builder()
+        .appName("lance-hive2-example")
+        .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+        .config("spark.sql.catalog.lance.impl", "hive2")
+        .config("spark.sql.catalog.lance.hadoop.hive.metastore.uris", "thrift://metastore:9083")
+        .config("spark.sql.catalog.lance.client.pool-size", "3")
+        .config("spark.sql.catalog.lance.root", "hdfs://namenode:8020/lance")
+        .getOrCreate();
+    ```
+
+#### Hive Configuration Parameters
+
+| Parameter                                   | Required | Description                                                                             |
+|---------------------------------------------|----------|-----------------------------------------------------------------------------------------|
+| `spark.sql.catalog.{name}.hadoop.*`         | ✗        | Additional Hadoop configuration options, will override the default Hadoop configuration |
+| `spark.sql.catalog.{name}.client.pool-size` | ✗        | Connection pool size for metastore clients (default: 3)                                 |
+| `spark.sql.catalog.{name}.root`             | ✗        | Storage root location for Lance tables (default: current directory)                     |
+| `spark.sql.catalog.{name}.storage.*`        | ✗        | Additional storage configuration options                                                |
+| `spark.sql.catalog.{name}.parent`           | ✗        | Parent prefix for multi-level namespaces (Hive 3.x only, default: `hive`)               |
+
+## Note on Namespace Levels
 
 Spark provides at least a 3 level hierarchy of **catalog → multi-level namespace → table**
-(most users treat as a 3 level hierarchy with 1 level namespace).
+Most users treat Spark as a 3 level hierarchy with 1 level namespace.
+
+### For Namespaces with Less Than 3 Levels
+
 Since Lance allows a 2 level hierarchy of **root namespace → table** for namespaces like `DirectoryNamespace`,
 the `LanceNamespaceSparkCatalog` provides a configuration `extra_level` which puts an additional dummy level
 to match the Spark hierarchy and make it **root namespace → dummy extra level → table**.
@@ -146,4 +352,19 @@ Currently, this is automatically set with `extra_level=default` for `DirectoryNa
 and when `RestNamespace` if it cannot respond to `ListNamespaces` operation.
 If you have a custom namespace implementation of the same behavior, you can also set the config to add the extra level.
 
+### For Namespaces with More Than 3 Levels
 
+Some namespace implementations like Hive3 support more than 3 levels of hierarchy. For example, Hive3 has a 
+4 level hierarchy: **root metastore → catalog → database → table**.
+
+To handle this, the `LanceNamespaceSparkCatalog` provides `parent` and `parent_delimiter` configurations which
+allow you to specify a parent prefix that gets prepended to all namespace operations.
+
+For example, with Hive3:
+- Setting `parent=hive` and `parent_delimiter=.` 
+- When Spark requests namespace `["database1"]`, it gets transformed to `["hive", "database1"]` for the API call
+- This allows the 4-level Hive3 structure to work within Spark's 3-level model
+
+The parent configuration effectively "anchors" your Spark catalog at a specific level within the deeper namespace
+hierarchy, making the extra levels transparent to Spark users while maintaining compatibility with the underlying
+namespace implementation.

@@ -13,23 +13,28 @@
  */
 package com.lancedb.lance.spark;
 
-import com.lancedb.lance.namespace.dir.DirectoryNamespaceConfig;
+import org.junit.jupiter.api.Disabled;
 
 import java.util.HashMap;
 import java.util.Map;
 
-/** Test for LanceNamespaceSparkCatalog using DirectoryNamespace implementation. */
-public abstract class LanceDirectoryNamespaceTestBase extends LanceNamespaceTestBase {
+@Disabled("Requires AWS credentials setup, Glue catalog must have the default database created")
+public class TestSparkGlueNamespace extends SparkLanceNamespaceTestBase {
 
   @Override
   protected String getNsImpl() {
-    return "dir";
+    return "glue";
   }
 
   @Override
   protected Map<String, String> getAdditionalNsConfigs() {
     Map<String, String> configs = new HashMap<>();
-    configs.put(DirectoryNamespaceConfig.ROOT, tempDir.toString());
+    configs.put("root", tempDir.toString() + "/lance");
     return configs;
+  }
+
+  @Override
+  protected boolean supportsNamespace() {
+    return true;
   }
 }

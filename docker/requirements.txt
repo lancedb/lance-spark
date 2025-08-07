@@ -1,0 +1,11 @@
+jupyterlab==3.6.7
+jupyter-server==1.24.0
+pandas==2.3.1
+numpy==1.26.4
+matplotlib==3.10.5
+seaborn==0.12.2
+plotly==5.15.0
+findspark==2.0.1
+pyarrow==14.0.1
+lancedb==0.3.3
+boto3==1.28.27
