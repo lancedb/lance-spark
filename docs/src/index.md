@@ -31,12 +31,12 @@ Specifically, you can use the Apache Spark Connector for Lance to:
 
 === "PySpark"
     ```shell
-    pyspark --packages com.lancedb:lance-spark-bundle-3.5_2.12:0.0.1
+    pyspark --packages com.lancedb:lance-spark-bundle-3.5_2.12:0.0.5
     ```
 
 === "Spark Shell (Scala)"
     ```shell
-    spark-shell --packages com.lancedb:lance-spark-bundle-3.5_2.12:0.0.1
+    spark-shell --packages com.lancedb:lance-spark-bundle-3.5_2.12:0.0.5
     ```
 
 ### Prepare Data
