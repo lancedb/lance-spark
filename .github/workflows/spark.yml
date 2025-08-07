@@ -16,12 +16,16 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - 'docs/**'
   pull_request:
     types:
       - opened
       - synchronize
       - ready_for_review
       - reopened
+    paths-ignore:
+      - 'docs/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
