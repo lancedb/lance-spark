@@ -52,8 +52,7 @@ object LanceArrowWriter {
       sparkType: DataType,
       metadata: org.apache.spark.sql.types.Metadata = null): LanceArrowFieldWriter = {
     (sparkType, vector) match {
-      case (ArrayType(elementType: NumericType, _), vector: FixedSizeListVector)
-          if shouldBeFixedSizeList(metadata, elementType) =>
+      case (ArrayType(elementType: NumericType, _), vector: FixedSizeListVector) =>
         val elementWriter = createFieldWriter(vector.getDataVector(), elementType, null)
         new FixedSizeListWriter(vector, elementWriter)
 
