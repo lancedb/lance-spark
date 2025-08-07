@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://lancedb.github.io/lance-spark/</loc>
+         <lastmod>2025-08-07</lastmod>
+    </url>
+    <url>
+         <loc>https://lancedb.github.io/lance-spark/dev-guide/</loc>
+         <lastmod>2025-08-07</lastmod>
+    </url>
+    <url>
+         <loc>https://lancedb.github.io/lance-spark/user-guide/config/</loc>
+         <lastmod>2025-08-07</lastmod>
+    </url>
+    <url>
+         <loc>https://lancedb.github.io/lance-spark/user-guide/install/</loc>
+         <lastmod>2025-08-07</lastmod>
+    </url>
+    <url>
+         <loc>https://lancedb.github.io/lance-spark/user-guide/read/</loc>
+         <lastmod>2025-08-07</lastmod>
+    </url>
+    <url>
+         <loc>https://lancedb.github.io/lance-spark/user-guide/write/</loc>
+         <lastmod>2025-08-07</lastmod>
+    </url>
+</urlset>
