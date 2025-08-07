@@ -35,7 +35,7 @@ WORKDIR ${SPARK_HOME}
 
 ENV SPARK_VERSION=3.5.6
 ENV SPARK_MAJOR_VERSION=3.5
-ENV LANCE_SPARK_VERSION=0.0.4
+ENV LANCE_SPARK_VERSION=0.0.5
 ENV LANCE_NS_VERSION=0.0.6
 
 # Download spark
@@ -45,7 +45,7 @@ RUN mkdir -p ${SPARK_HOME} \
  && rm -rf spark-${SPARK_VERSION}-bin-hadoop3.tgz
 
 # Download lance-spark bundle JAR from Maven
-RUN curl -L https://repo1.maven.org/maven2/com/lancedb/lance-spark-bundle_2.12/${LANCE_SPARK_VERSION}/lance-spark-bundle_2.12-${LANCE_SPARK_VERSION}.jar \
+RUN curl -L https://repo1.maven.org/maven2/com/lancedb/lance-spark-bundle-3.5_2.12/${LANCE_SPARK_VERSION}/lance-spark-bundle-3.5_2.12-${LANCE_SPARK_VERSION}.jar \
  -o /opt/spark/jars/lance-spark-bundle_2.12-${LANCE_SPARK_VERSION}.jar
 
 # Download additional Lance namespace implementation jars from Maven
@@ -53,8 +53,8 @@ RUN curl -L https://repo1.maven.org/maven2/com/lancedb/lance-namespace-glue/${LA
  -o /opt/spark/jars/lance-namespace-glue-${LANCE_NS_VERSION}.jar
 
 # For local testing, uncomment the lines below and comment out the Maven downloads above:
-# COPY lance-spark-bundle-${SPARK_MAJOR_VERSION}_2.12-${LANCE_SPARK_VERSION}.jar /opt/spark/jars/
-# COPY lance-namespace-glue-${LANCE_NS_VERSION}.jar /opt/spark/jars/
+#COPY lance-spark-bundle-${SPARK_MAJOR_VERSION}_2.12-${LANCE_SPARK_VERSION}.jar /opt/spark/jars/
+#COPY lance-namespace-glue-${LANCE_NS_VERSION}.jar /opt/spark/jars/
 
 # Download OpenDAL native libraries for Linux architectures
 ENV OPENDAL_VERSION=0.48.0
