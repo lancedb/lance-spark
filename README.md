@@ -1,7 +1,5 @@
 # Apache Spark Connector for Lance
 
-![logo](./docs/src/logo/wide.png)
-
 The Apache Spark Connector for Lance allows Apache Spark to efficiently read datasets stored in Lance format.
 
 Lance is a modern columnar data format optimized for machine learning workflows and datasets,
@@ -23,7 +21,7 @@ Specifically, you can use the Apache Spark Connector for Lance to:
 * **Distributed, Parallel Scans**: Leverage Spark's distributed computing capabilities to perform parallel scans on Lance datasets.
 * **Column and Filter Pushdown**: Optimize query performance by pushing down column selections and filters to the data source.
 
-## User & Development Guide
+## Contributing Guide
 
-For the comprehensive user and development guide, 
-please visit the documentation website at https://lancedb.github.io/lance-spark.
+See [contributing](docs/src/contributing.md) for the detailed contribution guidelines and local development setup.
+

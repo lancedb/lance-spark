@@ -115,3 +115,7 @@ docker-shell:
 .PHONY: docker-down
 docker-down:
 	cd docker && docker-compose down
+
+.PHONY: serve-docs
+serve-docs:
+	cd docs && uv pip install -r requirements.txt && uv run mkdocs serve
