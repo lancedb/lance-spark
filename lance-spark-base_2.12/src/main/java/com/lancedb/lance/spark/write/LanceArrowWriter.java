@@ -18,7 +18,7 @@ import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.ipc.ArrowReader;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.execution.arrow.ArrowWriter;
+import org.apache.spark.sql.types.StructType;
 
 import javax.annotation.concurrent.GuardedBy;
 
@@ -30,22 +30,25 @@ import java.util.concurrent.atomic.AtomicLong;
 /** A custom arrow reader that supports writes Spark internal rows while reading data in batches. */
 public class LanceArrowWriter extends ArrowReader {
   private final Schema schema;
+  private final StructType sparkSchema;
   private final int batchSize;
 
   @GuardedBy("monitor")
   private volatile boolean finished;
 
   private final AtomicLong totalBytesRead = new AtomicLong();
-  private ArrowWriter arrowWriter = null;
+  private com.lancedb.lance.spark.arrow.LanceArrowWriter arrowWriter = null;
   private final AtomicInteger count = new AtomicInteger(0);
   private final Semaphore writeToken;
   private final Semaphore loadToken;
 
-  public LanceArrowWriter(BufferAllocator allocator, Schema schema, int batchSize) {
+  public LanceArrowWriter(
+      BufferAllocator allocator, Schema schema, StructType sparkSchema, int batchSize) {
     super(allocator);
     Preconditions.checkNotNull(schema);
     Preconditions.checkArgument(batchSize > 0);
     this.schema = schema;
+    this.sparkSchema = sparkSchema;
     this.batchSize = batchSize;
     this.writeToken = new Semaphore(0);
     this.loadToken = new Semaphore(0);
@@ -74,7 +77,9 @@ public class LanceArrowWriter extends ArrowReader {
   @Override
   public void prepareLoadNextBatch() throws IOException {
     super.prepareLoadNextBatch();
-    arrowWriter = ArrowWriter.create(this.getVectorSchemaRoot());
+    arrowWriter =
+        com.lancedb.lance.spark.arrow.LanceArrowWriter$.MODULE$.create(
+            this.getVectorSchemaRoot(), sparkSchema);
     // release batch size token for write
     writeToken.release(batchSize);
   }

@@ -23,6 +23,9 @@ import org.apache.arrow.vector.types.pojo.FieldType;
 import org.apache.arrow.vector.types.pojo.Schema;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -45,9 +48,16 @@ public class LanceArrowWriterTest {
               null);
       Schema schema = new Schema(Collections.singletonList(field));
 
+      StructType sparkSchema =
+          new StructType(
+              new StructField[] {
+                DataTypes.createStructField("column1", DataTypes.IntegerType, true)
+              });
+
       final int totalRows = 125;
       final int batchSize = 34;
-      final LanceArrowWriter arrowWriter = new LanceArrowWriter(allocator, schema, batchSize);
+      final LanceArrowWriter arrowWriter =
+          new LanceArrowWriter(allocator, schema, sparkSchema, batchSize);
 
       AtomicInteger rowsWritten = new AtomicInteger(0);
       AtomicInteger rowsRead = new AtomicInteger(0);
