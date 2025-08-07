@@ -1,7 +1,5 @@
 # Contributing to Spark Lance Connector
 
-This is the contribution guide for [Spark Lance Connector](https://github.com/lancedb/lance-spark)
-
 ## Build Commands
 
 This connector is built using Maven. You can run the following make commands:
@@ -23,64 +21,35 @@ make clean-35-212
 make bundle-35-212
 ```
 
-To build everything without running tests:
-
-```shell
-./mvnw clean install -DskipTests
-```
-
 ## Styling Guide
 
 We use checkstyle and spotless to lint the code.
 
-To verify checkstyle:
-
-```shell
-./mvnw checkstyle:check
-```
-
-To verify spotless:
-
-```shell
-./mvnw spotless:check
-```
-
 All the `make build` commands automatically perform `spotless:apply` to the code.
 
-## Documentation Website
+To verify style, run:
+
+```shell
+make lint
+```
+
+## Documentation
 
 ### Setup
 
 The documentation website is built using [mkdocs-material](https://pypi.org/project/mkdocs-material).
+The build system require [uv](https://docs.astral.sh/uv/).
 
-Install dependencies with:
+Start the server with:
 
 ```shell
-uv pip install -r requirements.txt
+make serve-docs
 ```
 
-Run the website with
+### Understanding the Build Process
 
-
-The easiest way to setup is to create a Python virtual environment
-and install the necessary dependencies:
-
-```bash
-python3 -m venv .env
-source .env/bin/activate
-pip install 
-pip install 
-```
-
-Then you can start the server at `http://localhost:8000/lance-spark` by:
-
-```bash
-source .env/bin/activate
-mkdocs serve
-```
-
-### Contents
-
-In general, we push most of the contents in the website as the single source of truth.
-The welcome page is the same as the README of the GitHub repository.
-If you edit one of them, please make sure to update the other document.
+The contents in the `lance-spark` repo are for the ease of contributors to edit and preview.
+After code merge, the contents are added to the 
+[main Lance documentation](https://github.com/lancedb/lance/tree/main/docs) 
+during the Lance doc CI build time, and is presented in the Lance website under 
+[Apache Spark integration](https://lancedb.github.io/lance/integrations/spark).

@@ -7,10 +7,10 @@ Spark DSV2 catalog integrates with Lance through [Lance Namespace](https://githu
 Configure Spark with the `LanceNamespaceSparkCatalog` by setting the appropriate Spark catalog implementation 
 and namespace-specific options:
 
-| Parameter                              | Type   | Required | Description                                                                                               |
-|----------------------------------------|--------|----------|-----------------------------------------------------------------------------------------------------------|
-| `spark.sql.catalog.{name}`             | String | ✓        | Set to `com.lancedb.lance.spark.LanceNamespaceSparkCatalog`                                               |
-| `spark.sql.catalog.{name}.impl`        | String | ✓        | Namespace implementation, short name like `dir`, `rest`, `hive`, `glue` or full Java implementation class |
+| Parameter                              | Type   | Required | Description                                                                                                |
+|----------------------------------------|--------|----------|------------------------------------------------------------------------------------------------------------|
+| `spark.sql.catalog.{name}`             | String | ✓        | Set to `com.lancedb.lance.spark.LanceNamespaceSparkCatalog`                                                |
+| `spark.sql.catalog.{name}.impl`        | String | ✓        | Namespace implementation, short name like `dir`, `rest`, `hive3`, `glue` or full Java implementation class |
 
 ## Example Namespace Implementations
 
@@ -61,11 +61,11 @@ and namespace-specific options:
 
 #### Directory Configuration Parameters
 
-| Parameter                              | Required | Description                                                  |
-|----------------------------------------|----------|--------------------------------------------------------------|
-| `spark.sql.catalog.{name}.root`        | ✗        | Storage root location (default: current directory)           |
-| `spark.sql.catalog.{name}.storage.*`   | ✗        | Additional OpenDAL storage configuration options             |
-| `spark.sql.catalog.{name}.extra_level` | ✗        | Virtual level for 2-level namespaces (auto-set to `default`) |
+| Parameter                              | Required | Description                                                                                                                               |
+|----------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| `spark.sql.catalog.{name}.root`        | ✗        | Storage root location (default: current directory)                                                                                        |
+| `spark.sql.catalog.{name}.storage.*`   | ✗        | Additional OpenDAL storage configuration options                                                                                          |
+| `spark.sql.catalog.{name}.extra_level` | ✗        | Virtual level for 2-level namespaces (auto-set to `default`). See [Note on Namespace Levels](#note-on-namespace-levels) for more details. |
 
 Example settings:
 
@@ -177,10 +177,10 @@ Here we use LanceDB Cloud as an example of the REST namespace:
 
 #### REST Configuration Parameters
 
-| Parameter                                    | Required | Description                                                                     |
-|----------------------------------------------|----------|---------------------------------------------------------------------------------|
-| `spark.sql.catalog.{name}.uri`              | ✓        | REST API endpoint URL (e.g., `https://api.lancedb.com`)                       |
-| `spark.sql.catalog.{name}.headers.*`        | ✗        | HTTP headers for authentication (e.g., `headers.x-api-key`)                   |
+| Parameter                            | Required | Description                                                 |
+|--------------------------------------|----------|-------------------------------------------------------------|
+| `spark.sql.catalog.{name}.uri`       | ✓        | REST API endpoint URL (e.g., `https://api.lancedb.com`)     |
+| `spark.sql.catalog.{name}.headers.*` | ✗        | HTTP headers for authentication (e.g., `headers.x-api-key`) |
 
 ### AWS Glue Namespace
 
@@ -360,17 +360,17 @@ spark-shell \
 
 #### Hive Configuration Parameters
 
-| Parameter                                   | Required | Description                                                                             |
-|---------------------------------------------|----------|-----------------------------------------------------------------------------------------|
-| `spark.sql.catalog.{name}.hadoop.*`         | ✗        | Additional Hadoop configuration options, will override the default Hadoop configuration |
-| `spark.sql.catalog.{name}.client.pool-size` | ✗        | Connection pool size for metastore clients (default: 3)                                 |
-| `spark.sql.catalog.{name}.root`             | ✗        | Storage root location for Lance tables (default: current directory)                     |
-| `spark.sql.catalog.{name}.storage.*`        | ✗        | Additional storage configuration options                                                |
-| `spark.sql.catalog.{name}.parent`           | ✗        | Parent prefix for multi-level namespaces (Hive 3.x only, default: `hive`)               |
+| Parameter                                   | Required | Description                                                                                                                                            |
+|---------------------------------------------|----------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `spark.sql.catalog.{name}.hadoop.*`         | ✗        | Additional Hadoop configuration options, will override the default Hadoop configuration                                                                |
+| `spark.sql.catalog.{name}.client.pool-size` | ✗        | Connection pool size for metastore clients (default: 3)                                                                                                |
+| `spark.sql.catalog.{name}.root`             | ✗        | Storage root location for Lance tables (default: current directory)                                                                                    |
+| `spark.sql.catalog.{name}.storage.*`        | ✗        | Additional storage configuration options                                                                                                               |
+| `spark.sql.catalog.{name}.parent`           | ✗        | Parent prefix for multi-level namespaces (Hive 3.x only, default: `hive`). See [Note on Namespace Levels](#note-on-namespace-levels) for more details. |
 
 ## Note on Namespace Levels
 
-Spark provides at least a 3 level hierarchy of **catalog → multi-level namespace → table**
+Spark provides at least a 3 level hierarchy of **catalog → multi-level namespace → table**.
 Most users treat Spark as a 3 level hierarchy with 1 level namespace.
 
 ### For Namespaces with Less Than 3 Levels
@@ -392,9 +392,10 @@ To handle this, the `LanceNamespaceSparkCatalog` provides `parent` and `parent_d
 allow you to specify a parent prefix that gets prepended to all namespace operations.
 
 For example, with Hive3:
+- 
 - Setting `parent=hive` and `parent_delimiter=.` 
 - When Spark requests namespace `["database1"]`, it gets transformed to `["hive", "database1"]` for the API call
-- This allows the 4-level Hive3 structure to work within Spark's 3-level model
+- This allows the 4-level Hive 3 structure to work within Spark's 3-level model.
 
 The parent configuration effectively "anchors" your Spark catalog at a specific level within the deeper namespace
 hierarchy, making the extra levels transparent to Spark users while maintaining compatibility with the underlying

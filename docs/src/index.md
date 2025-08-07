@@ -4,11 +4,6 @@
 
 The Apache Spark Connector for Lance allows Apache Spark to efficiently read datasets stored in Lance format.
 
-Lance is a modern columnar data format optimized for machine learning workflows and datasets,
-supporting distributed, parallel scans, and optimizations such as column and filter pushdown to improve performance.
-Additionally, Lance provides high-performance random access that is 100 times faster than Parquet
-without sacrificing scan performance.
-
 By using the Apache Spark Connector for Lance, you can leverage Apache Spark's powerful data processing, SQL querying,
 and machine learning training capabilities on the AI data lake powered by Lance.
 

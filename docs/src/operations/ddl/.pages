@@ -1,0 +1,7 @@
+title: DDL
+nav:
+  - create-table.md
+  - dataframe-create-table.md
+  - show-tables.md
+  - describe-table.md
+  - drop-table.md
