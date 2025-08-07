@@ -1,0 +1,5 @@
+title: Operations
+nav:
+  - ddl
+  - dql
+  - dml

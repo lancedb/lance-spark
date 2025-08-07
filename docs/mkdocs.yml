@@ -8,8 +8,6 @@ repo_url: https://github.com/lancedb/lance-spark
 
 theme:
   name: material
-  logo: logo/white.png
-  favicon: logo/logo.png
   palette:
     - scheme: default
       primary: indigo
@@ -54,6 +52,7 @@ markdown_extensions:
 
 plugins:
   - search
+  - awesome-pages
 
 extra:
   social:
@@ -63,14 +62,3 @@ extra:
       link: https://discord.gg/zMM32dvNtd
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/lancedb
-
-nav:
-  - Welcome: index.md
-  - User Guide:
-    - Install: user-guide/install.md
-    - Config: user-guide/config.md
-    - Inspecting Datasets: user-guide/read.md
-    - Managing Datasets: user-guide/write.md
-  - Development Guide: dev-guide.md
-  - Lance: https://lancedb.github.io/lance
-  - Apache Spark: https://spark.apache.org/third-party-projects.html
