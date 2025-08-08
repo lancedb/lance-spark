@@ -24,6 +24,7 @@ package org.apache.spark.sql.util
  */
 
 import com.lancedb.lance.spark.LanceConstant
+
 import org.apache.arrow.vector.complex.MapVector
 import org.apache.arrow.vector.types.{DateUnit, FloatingPointPrecision, IntervalUnit, TimeUnit}
 import org.apache.arrow.vector.types.pojo.{ArrowType, Field, FieldType, Schema}
@@ -34,6 +35,7 @@ import org.json4s.JsonAST.{JObject, JString}
 
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
+
 import scala.collection.JavaConverters._
 
 object LanceArrowUtils {
@@ -105,7 +107,13 @@ object LanceArrowUtils {
           name,
           fieldType,
           fields.map { field =>
-            toArrowField(field.name, field.dataType, field.nullable, field.metadata, timeZoneId, large)
+            toArrowField(
+              field.name,
+              field.dataType,
+              field.nullable,
+              field.metadata,
+              timeZoneId,
+              large)
           }.toSeq.asJava)
       case MapType(keyType, valueType, valueContainsNull) =>
         val mapType = new FieldType(nullable, new ArrowType.Map(false), null, meta.asJava)

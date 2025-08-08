@@ -13,13 +13,13 @@
  */
 package com.lancedb.lance.spark.write;
 
-import com.google.common.collect.ImmutableMap;
 import com.lancedb.lance.Dataset;
 import com.lancedb.lance.FragmentMetadata;
 import com.lancedb.lance.FragmentOperation;
 import com.lancedb.lance.WriteParams;
 import com.lancedb.lance.spark.LanceConfig;
 
+import com.google.common.collect.ImmutableMap;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.types.pojo.ArrowType;
@@ -76,10 +76,15 @@ public class LanceDataWriterTest {
   public void testBlobWriter(TestInfo testInfo) throws IOException {
     String datasetName = testInfo.getTestMethod().get().getName();
     try (BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE)) {
-      Field field = new Field(
-          "blob",
-          new FieldType(true, new ArrowType.LargeBinary(), null, ImmutableMap.of("lance-encoding:blob", "true")),
-          null);
+      Field field =
+          new Field(
+              "blob",
+              new FieldType(
+                  true,
+                  new ArrowType.LargeBinary(),
+                  null,
+                  ImmutableMap.of("lance-encoding:blob", "true")),
+              null);
       Schema schema = new Schema(Collections.singletonList(field));
       LanceConfig config =
           LanceConfig.from(tempDir.resolve(datasetName + LanceConfig.LANCE_FILE_SUFFIX).toString());
@@ -100,13 +105,20 @@ public class LanceDataWriterTest {
       assertEquals(1, fragments.size());
       assertEquals(rows, fragments.get(0).getPhysicalRows());
 
-      Dataset ds = Dataset.create(allocator, config.getDatasetUri(), schema, new WriteParams.Builder().build());
-      Dataset.commit(allocator, config.getDatasetUri(), new FragmentOperation.Append(fragments), Optional.of(ds.version()));
+      Dataset ds =
+          Dataset.create(
+              allocator, config.getDatasetUri(), schema, new WriteParams.Builder().build());
+      Dataset.commit(
+          allocator,
+          config.getDatasetUri(),
+          new FragmentOperation.Append(fragments),
+          Optional.of(ds.version()));
 
       ds = Dataset.open(config.getDatasetUri(), allocator);
       schema = ds.getSchema();
       String lanceEncoding = "lance-encoding:blob";
-      assertEquals(schema.findField("blob").getFieldType().getMetadata().get(lanceEncoding), "true");
+      assertEquals(
+          schema.findField("blob").getFieldType().getMetadata().get(lanceEncoding), "true");
 
       sparkSchema = LanceArrowUtils.fromArrowSchema(schema);
       assertEquals(sparkSchema.fields()[0].metadata().getString(lanceEncoding), "true");

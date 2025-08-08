@@ -175,8 +175,9 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("unsigned long") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("unsigned long", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField(LanceConstant.ROW_ID, LongType, nullable = true, null, null)
-      .createVector(allocator).asInstanceOf[UInt8Vector]
+    val vector =
+      LanceArrowUtils.toArrowField(LanceConstant.ROW_ID, LongType, nullable = true, null, null)
+        .createVector(allocator).asInstanceOf[UInt8Vector]
     vector.allocateNew()
 
     (0 until 10).foreach { i =>
@@ -286,8 +287,9 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("large_string") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("string", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("string", StringType, nullable = true, null, null, true)
-      .createVector(allocator).asInstanceOf[LargeVarCharVector]
+    val vector =
+      LanceArrowUtils.toArrowField("string", StringType, nullable = true, null, null, true)
+        .createVector(allocator).asInstanceOf[LargeVarCharVector]
     vector.allocateNew()
 
     (0 until 10).foreach { i =>
@@ -340,8 +342,9 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("large_binary") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("binary", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("binary", BinaryType, nullable = true, null, null, true)
-      .createVector(allocator).asInstanceOf[LargeVarBinaryVector]
+    val vector =
+      LanceArrowUtils.toArrowField("binary", BinaryType, nullable = true, null, null, true)
+        .createVector(allocator).asInstanceOf[LargeVarBinaryVector]
     vector.allocateNew()
 
     (0 until 10).foreach { i =>
