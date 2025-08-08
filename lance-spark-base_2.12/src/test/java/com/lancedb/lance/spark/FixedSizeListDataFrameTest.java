@@ -28,9 +28,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test for FixedSizeList support using DataFrame API.
- * Tests creating Lance tables with vector columns via DataFrame write operations
- * and validates both write and read paths.
+ * Test for FixedSizeList support using DataFrame API. Tests creating Lance tables with vector
+ * columns via DataFrame write operations and validates both write and read paths.
  */
 public class FixedSizeListDataFrameTest {
 
@@ -53,26 +52,23 @@ public class FixedSizeListDataFrameTest {
 
     try {
       String tableName = "df_vector_table";
-      
+
       // Create metadata for vector column - use Long value, not String
-      Metadata vectorMetadata = Metadata.fromJson(
-          "{\"arrow.fixed-size-list.size\":128}"
-      );
-      
+      Metadata vectorMetadata = Metadata.fromJson("{\"arrow.fixed-size-list.size\":128}");
+
       // Create schema with vector column using DataFrame API
-      StructType schema = new StructType(
-          new StructField[] {
-              DataTypes.createStructField("id", DataTypes.IntegerType, false),
-              DataTypes.createStructField("text", DataTypes.StringType, true),
-              new StructField(
-                  "embeddings",
-                  DataTypes.createArrayType(DataTypes.FloatType, false),
-                  false,
-                  vectorMetadata
-              )
-          }
-      );
-      
+      StructType schema =
+          new StructType(
+              new StructField[] {
+                DataTypes.createStructField("id", DataTypes.IntegerType, false),
+                DataTypes.createStructField("text", DataTypes.StringType, true),
+                new StructField(
+                    "embeddings",
+                    DataTypes.createArrayType(DataTypes.FloatType, false),
+                    false,
+                    vectorMetadata)
+              });
+
       // Create test data
       List<Row> rows = new ArrayList<>();
       for (int i = 0; i < 10; i++) {
@@ -82,18 +78,16 @@ public class FixedSizeListDataFrameTest {
         }
         rows.add(RowFactory.create(i, "text_" + i, vector));
       }
-      
+
       Dataset<Row> df = spark.createDataFrame(rows, schema);
-      
+
       // Write to Lance table using DataFrame API
-      df.writeTo(catalogName + ".default." + tableName)
-          .using("lance")
-          .createOrReplace();
-      
+      df.writeTo(catalogName + ".default." + tableName).using("lance").createOrReplace();
+
       // Read back and verify
       Dataset<Row> result = spark.table(catalogName + ".default." + tableName);
       assertEquals(10, result.count(), "Should have 10 rows");
-      
+
       // Verify the data was read correctly
       Row firstRow = result.first();
       assertEquals(0, firstRow.getInt(0));
@@ -101,16 +95,16 @@ public class FixedSizeListDataFrameTest {
       scala.collection.mutable.WrappedArray<Float> embeddings =
           (scala.collection.mutable.WrappedArray<Float>) firstRow.get(2);
       assertEquals(128, embeddings.size(), "Embeddings should have 128 elements");
-      
+
       // Verify values
       for (int i = 0; i < 10; i++) {
         float expected = i * 0.001f;
         assertEquals(expected, embeddings.apply(i), 0.0001f, "Value mismatch at index " + i);
       }
-      
+
       // Clean up
       spark.sql("DROP TABLE IF EXISTS " + catalogName + ".default." + tableName);
-      
+
     } finally {
       spark.stop();
     }
@@ -133,45 +127,42 @@ public class FixedSizeListDataFrameTest {
 
     try {
       String tableName = "df_multi_vector";
-      
+
       // Create metadata for different vector dimensions
       Metadata vec32Metadata = Metadata.fromJson("{\"arrow.fixed-size-list.size\":32}");
       Metadata vec128Metadata = Metadata.fromJson("{\"arrow.fixed-size-list.size\":128}");
       Metadata vec256Metadata = Metadata.fromJson("{\"arrow.fixed-size-list.size\":256}");
-      
+
       // Create schema with multiple vector columns
-      StructType schema = new StructType(
-          new StructField[] {
-              DataTypes.createStructField("id", DataTypes.IntegerType, false),
-              DataTypes.createStructField("name", DataTypes.StringType, true),
-              new StructField(
-                  "small_embedding",
-                  DataTypes.createArrayType(DataTypes.FloatType, false),
-                  false,
-                  vec32Metadata
-              ),
-              new StructField(
-                  "medium_embedding",
-                  DataTypes.createArrayType(DataTypes.FloatType, false),
-                  false,
-                  vec128Metadata
-              ),
-              new StructField(
-                  "large_embedding",
-                  DataTypes.createArrayType(DataTypes.FloatType, false),
-                  false,
-                  vec256Metadata
-              )
-          }
-      );
-      
+      StructType schema =
+          new StructType(
+              new StructField[] {
+                DataTypes.createStructField("id", DataTypes.IntegerType, false),
+                DataTypes.createStructField("name", DataTypes.StringType, true),
+                new StructField(
+                    "small_embedding",
+                    DataTypes.createArrayType(DataTypes.FloatType, false),
+                    false,
+                    vec32Metadata),
+                new StructField(
+                    "medium_embedding",
+                    DataTypes.createArrayType(DataTypes.FloatType, false),
+                    false,
+                    vec128Metadata),
+                new StructField(
+                    "large_embedding",
+                    DataTypes.createArrayType(DataTypes.FloatType, false),
+                    false,
+                    vec256Metadata)
+              });
+
       // Create test data
       List<Row> rows = new ArrayList<>();
       for (int i = 0; i < 5; i++) {
         float[] smallVec = new float[32];
         float[] mediumVec = new float[128];
         float[] largeVec = new float[256];
-        
+
         for (int j = 0; j < 32; j++) {
           smallVec[j] = i * 0.01f + j * 0.001f;
         }
@@ -181,21 +172,19 @@ public class FixedSizeListDataFrameTest {
         for (int j = 0; j < 256; j++) {
           largeVec[j] = i * 0.002f + j * 0.0002f;
         }
-        
+
         rows.add(RowFactory.create(i, "entity_" + i, smallVec, mediumVec, largeVec));
       }
-      
+
       Dataset<Row> df = spark.createDataFrame(rows, schema);
-      
+
       // Write to Lance table
-      df.writeTo(catalogName + ".default." + tableName)
-          .using("lance")
-          .createOrReplace();
-      
+      df.writeTo(catalogName + ".default." + tableName).using("lance").createOrReplace();
+
       // Read back and verify
       Dataset<Row> result = spark.table(catalogName + ".default." + tableName);
       assertEquals(5, result.count(), "Should have 5 rows");
-      
+
       // Verify dimensions
       Row firstRow = result.first();
       scala.collection.mutable.WrappedArray<Float> smallEmb =
@@ -204,14 +193,14 @@ public class FixedSizeListDataFrameTest {
           (scala.collection.mutable.WrappedArray<Float>) firstRow.get(3);
       scala.collection.mutable.WrappedArray<Float> largeEmb =
           (scala.collection.mutable.WrappedArray<Float>) firstRow.get(4);
-      
+
       assertEquals(32, smallEmb.size(), "Small embedding should have 32 elements");
       assertEquals(128, mediumEmb.size(), "Medium embedding should have 128 elements");
       assertEquals(256, largeEmb.size(), "Large embedding should have 256 elements");
-      
+
       // Clean up
       spark.sql("DROP TABLE IF EXISTS " + catalogName + ".default." + tableName);
-      
+
     } finally {
       spark.stop();
     }
@@ -234,66 +223,62 @@ public class FixedSizeListDataFrameTest {
 
     try {
       String tableName = "df_mixed_precision";
-      
+
       // Create metadata
       Metadata floatVecMetadata = Metadata.fromJson("{\"arrow.fixed-size-list.size\":64}");
       Metadata doubleVecMetadata = Metadata.fromJson("{\"arrow.fixed-size-list.size\":64}");
-      
+
       // Create schema with float and double vectors
-      StructType schema = new StructType(
-          new StructField[] {
-              DataTypes.createStructField("id", DataTypes.IntegerType, false),
-              DataTypes.createStructField("label", DataTypes.StringType, true),
-              new StructField(
-                  "float_embedding",
-                  DataTypes.createArrayType(DataTypes.FloatType, false),
-                  false,
-                  floatVecMetadata
-              ),
-              new StructField(
-                  "double_embedding",
-                  DataTypes.createArrayType(DataTypes.DoubleType, false),
-                  false,
-                  doubleVecMetadata
-              )
-          }
-      );
-      
+      StructType schema =
+          new StructType(
+              new StructField[] {
+                DataTypes.createStructField("id", DataTypes.IntegerType, false),
+                DataTypes.createStructField("label", DataTypes.StringType, true),
+                new StructField(
+                    "float_embedding",
+                    DataTypes.createArrayType(DataTypes.FloatType, false),
+                    false,
+                    floatVecMetadata),
+                new StructField(
+                    "double_embedding",
+                    DataTypes.createArrayType(DataTypes.DoubleType, false),
+                    false,
+                    doubleVecMetadata)
+              });
+
       // Create test data
       List<Row> rows = new ArrayList<>();
       for (int i = 0; i < 5; i++) {
         float[] floatVec = new float[64];
         double[] doubleVec = new double[64];
-        
+
         for (int j = 0; j < 64; j++) {
           floatVec[j] = i * 0.1f + j * 0.01f;
           doubleVec[j] = i * 0.1 + j * 0.01;
         }
-        
+
         rows.add(RowFactory.create(i, "label_" + i, floatVec, doubleVec));
       }
-      
+
       Dataset<Row> df = spark.createDataFrame(rows, schema);
-      
+
       // Write to Lance table
-      df.writeTo(catalogName + ".default." + tableName)
-          .using("lance")
-          .createOrReplace();
-      
+      df.writeTo(catalogName + ".default." + tableName).using("lance").createOrReplace();
+
       // Read back and verify
       Dataset<Row> result = spark.table(catalogName + ".default." + tableName);
       assertEquals(5, result.count(), "Should have 5 rows");
-      
+
       // Verify precision is maintained
       Row firstRow = result.first();
       scala.collection.mutable.WrappedArray<Float> floatEmb =
           (scala.collection.mutable.WrappedArray<Float>) firstRow.get(2);
       scala.collection.mutable.WrappedArray<Double> doubleEmb =
           (scala.collection.mutable.WrappedArray<Double>) firstRow.get(3);
-      
+
       assertEquals(64, floatEmb.size());
       assertEquals(64, doubleEmb.size());
-      
+
       // Check precision difference
       for (int i = 0; i < 10; i++) {
         float fVal = floatEmb.apply(i);
@@ -301,10 +286,10 @@ public class FixedSizeListDataFrameTest {
         assertEquals(i * 0.01f, fVal, 0.0001f);
         assertEquals(i * 0.01, dVal, 0.0000001);
       }
-      
+
       // Clean up
       spark.sql("DROP TABLE IF EXISTS " + catalogName + ".default." + tableName);
-      
+
     } finally {
       spark.stop();
     }

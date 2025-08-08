@@ -28,8 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Test for FixedSizeList support using SQL API.
- * Tests creating Lance tables with vector columns via SQL CREATE TABLE and INSERT statements.
+ * Test for FixedSizeList support using SQL API. Tests creating Lance tables with vector columns via
+ * SQL CREATE TABLE and INSERT statements.
  */
 public class FixedSizeListSQLTest {
 
@@ -166,7 +166,7 @@ public class FixedSizeListSQLTest {
       StringBuilder insertSQL = new StringBuilder();
       insertSQL.append("INSERT INTO ").append(catalogName).append(".default.").append(tableName);
       insertSQL.append(" VALUES (1, 'doc1', ");
-      
+
       // title_embeddings: 64d
       insertSQL.append("array(");
       for (int i = 0; i < 64; i++) {
@@ -174,7 +174,7 @@ public class FixedSizeListSQLTest {
         insertSQL.append(i * 0.01f);
       }
       insertSQL.append("), ");
-      
+
       // content_embeddings: 256d
       insertSQL.append("array(");
       for (int i = 0; i < 256; i++) {
@@ -182,7 +182,7 @@ public class FixedSizeListSQLTest {
         insertSQL.append(i * 0.002f);
       }
       insertSQL.append("), ");
-      
+
       // summary_embeddings: 128d
       insertSQL.append("array(");
       for (int i = 0; i < 128; i++) {
@@ -190,7 +190,7 @@ public class FixedSizeListSQLTest {
         insertSQL.append(i * 0.005f);
       }
       insertSQL.append("))");
-      
+
       spark.sql(insertSQL.toString());
 
       // Verify data
