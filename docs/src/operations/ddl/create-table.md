@@ -34,7 +34,7 @@ CREATE TABLE events (
 
 ## Vector Columns
 
-Lance supports vector columns for machine learning workloads (embeddings, similarity search). You can create tables with vector columns by using `ARRAY<FLOAT>` or `ARRAY<DOUBLE>` types with table properties specifying the fixed dimension.
+Lance supports vector (embedding) columns for AI workloads. These columns are stored internally as Arrow `FixedSizeList[n]` where `n` is the vector dimension. Since Spark SQL doesn't have a native fixed-size array type, you must use `ARRAY<FLOAT>` or `ARRAY<DOUBLE>` with table properties to specify the fixed dimension. The Lance-Spark connector will automatically convert these to the appropriate Arrow FixedSizeList format during write operations.
 
 ### Supported Types
 
@@ -46,7 +46,7 @@ Lance supports vector columns for machine learning workloads (embeddings, simila
 
 ### Creating Vector Columns
 
-Create a table with a vector column:
+To create a table with vector columns, use the table property pattern `<column_name>.arrow.fixed-size-list.size` with the dimension as the value:
 
 ```sql
 CREATE TABLE embeddings_table (
@@ -94,6 +94,7 @@ SELECT id, text FROM embeddings_table WHERE id = 1;
 -- Count rows
 SELECT COUNT(*) FROM embeddings_table;
 ```
+Note: When reading vector columns back, they are automatically converted to Spark's `ARRAY<FLOAT>` or `ARRAY<DOUBLE>` types for compatibility with Spark operations.
 
 ### Vector Indexing
 
@@ -109,8 +110,6 @@ ds = lance.dataset("/path/to/embeddings_table.lance")
 ds.create_index(
     "embeddings",
     index_type="IVF_PQ",
-    num_partitions=256,
-    num_sub_vectors=16
 )
 
 # Perform similarity search

@@ -61,7 +61,9 @@ Create Lance tables from DataFrames using the DataSource V2 API.
 
 ## Creating Tables with Vector Columns
 
-Lance supports vector columns for machine learning workloads. You can create DataFrames with vector columns by adding metadata to the schema field definition.
+Lance supports vector (embedding) columns for AI workloads. These columns are stored internally as Arrow `FixedSizeList[n]` where `n` is the vector dimension. Since Spark DataFrames don't have a native fixed-size array type, you need to add metadata to your schema fields to indicate that an `ArrayType(FloatType)` or `ArrayType(DoubleType)` should be converted to Arrow FixedSizeList.
+
+The metadata key `"arrow.fixed-size-list.size"` with a value like `128` tells the Lance-Spark connector to convert that array column to a `FixedSizeList[128]` during write operations.
 
 ### Supported Types
 
@@ -155,10 +157,12 @@ Lance supports vector columns for machine learning workloads. You can create Dat
 
 ### Creating Multiple Vector Columns
 
-You can create DataFrames with multiple vector columns of different dimensions:
+You can create DataFrames with multiple vector columns, each with different dimensions:
 
 === "Python"
     ```python
+    from pyspark.sql.types import DoubleType
+    
     # Create schema with multiple vector columns
     text_metadata = {"arrow.fixed-size-list.size": 384}
     image_metadata = {"arrow.fixed-size-list.size": 512}
@@ -184,10 +188,11 @@ You can create DataFrames with multiple vector columns of different dimensions:
 
 ### Vector Indexing
 
-After creating tables with vector columns, you can create vector indexes using Lance Python API:
+After creating tables with vector columns, you can create vector indexes for efficient similarity search using the Lance Python API:
 
 ```python
 import lance
+import numpy as np
 
 # Open the dataset
 ds = lance.dataset("/path/to/vectors_table.lance")
@@ -206,3 +211,5 @@ results = ds.to_table(
     nearest={"column": "embeddings", "q": query_vector, "k": 10}
 ).to_pandas()
 ```
+
+Note: When reading vector columns back into Spark DataFrames, they are automatically converted to regular `ArrayType(FloatType)` or `ArrayType(DoubleType)` for compatibility with Spark operations.
