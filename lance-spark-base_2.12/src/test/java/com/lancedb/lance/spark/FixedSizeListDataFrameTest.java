@@ -92,8 +92,8 @@ public class FixedSizeListDataFrameTest {
       Row firstRow = result.first();
       assertEquals(0, firstRow.getInt(0));
       assertEquals("text_0", firstRow.getString(1));
-      scala.collection.mutable.WrappedArray<Float> embeddings =
-          (scala.collection.mutable.WrappedArray<Float>) firstRow.get(2);
+      // Use getSeq for cross-version compatibility
+      scala.collection.Seq<Float> embeddings = firstRow.getSeq(2);
       assertEquals(128, embeddings.size(), "Embeddings should have 128 elements");
 
       // Verify values
@@ -187,12 +187,10 @@ public class FixedSizeListDataFrameTest {
 
       // Verify dimensions
       Row firstRow = result.first();
-      scala.collection.mutable.WrappedArray<Float> smallEmb =
-          (scala.collection.mutable.WrappedArray<Float>) firstRow.get(2);
-      scala.collection.mutable.WrappedArray<Float> mediumEmb =
-          (scala.collection.mutable.WrappedArray<Float>) firstRow.get(3);
-      scala.collection.mutable.WrappedArray<Float> largeEmb =
-          (scala.collection.mutable.WrappedArray<Float>) firstRow.get(4);
+      // Use getSeq for cross-version compatibility
+      scala.collection.Seq<Float> smallEmb = firstRow.getSeq(2);
+      scala.collection.Seq<Float> mediumEmb = firstRow.getSeq(3);
+      scala.collection.Seq<Float> largeEmb = firstRow.getSeq(4);
 
       assertEquals(32, smallEmb.size(), "Small embedding should have 32 elements");
       assertEquals(128, mediumEmb.size(), "Medium embedding should have 128 elements");
@@ -271,10 +269,9 @@ public class FixedSizeListDataFrameTest {
 
       // Verify precision is maintained
       Row firstRow = result.first();
-      scala.collection.mutable.WrappedArray<Float> floatEmb =
-          (scala.collection.mutable.WrappedArray<Float>) firstRow.get(2);
-      scala.collection.mutable.WrappedArray<Double> doubleEmb =
-          (scala.collection.mutable.WrappedArray<Double>) firstRow.get(3);
+      // Use getSeq for cross-version compatibility
+      scala.collection.Seq<Float> floatEmb = firstRow.getSeq(2);
+      scala.collection.Seq<Double> doubleEmb = firstRow.getSeq(3);
 
       assertEquals(64, floatEmb.size());
       assertEquals(64, doubleEmb.size());

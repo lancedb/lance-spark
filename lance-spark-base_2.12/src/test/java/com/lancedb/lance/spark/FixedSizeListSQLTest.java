@@ -108,8 +108,8 @@ public class FixedSizeListSQLTest {
       assertEquals("test_text", firstRow.getString(1));
 
       // Verify the array was read correctly
-      scala.collection.mutable.WrappedArray<Float> embeddings =
-          (scala.collection.mutable.WrappedArray<Float>) firstRow.get(2);
+      // Use getSeq for cross-version compatibility
+      scala.collection.Seq<Float> embeddings = firstRow.getSeq(2);
       assertEquals(128, embeddings.size(), "Embeddings should have 128 elements");
 
       // Clean up
