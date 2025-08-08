@@ -28,22 +28,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Test for creating Lance tables with FixedSizeList vectors.
- *
- * <p>This test demonstrates the ability to create Lance tables with vector columns that are
- * converted to Arrow FixedSizeList format for efficient vector operations.
+ * Test for FixedSizeList support using SQL API.
+ * Tests creating Lance tables with vector columns via SQL CREATE TABLE and INSERT statements.
  */
-public class FixedSizeListVectorTest {
+public class FixedSizeListSQLTest {
 
   @TempDir Path tempDir;
 
   @Test
-  public void testCreateTableWithFixedSizeListVectors() {
+  public void testCreateTableWithFixedSizeListVectorSQL() {
     String catalogName = "lance_test";
 
     SparkSession spark =
         SparkSession.builder()
-            .appName("fixed-size-list-test")
+            .appName("fixedsizelist-sql-test")
             .master("local[*]")
             .config(
                 "spark.sql.catalog." + catalogName,
@@ -53,11 +51,9 @@ public class FixedSizeListVectorTest {
             .getOrCreate();
 
     try {
-      String tableName = "vector_table";
+      String tableName = "vector_table_sql";
 
       // Create table with vector column using TBLPROPERTIES
-      // The property 'embeddings.arrow.fixed-size-list.size' = '128'
-      // instructs the catalog to create a FixedSizeList[128] column
       spark.sql(
           "CREATE TABLE IF NOT EXISTS "
               + catalogName
@@ -76,8 +72,6 @@ public class FixedSizeListVectorTest {
       spark.sql("SHOW TABLES IN " + catalogName + ".default").show();
 
       // Get the schema with metadata
-      // The table should be readable as Spark sees it as ARRAY<FLOAT>
-      // The conversion to FixedSizeList happens internally during write operations
       StructType schema = spark.table(catalogName + ".default." + tableName).schema();
       assertNotNull(schema);
       assertEquals(3, schema.fields().length);
@@ -87,17 +81,12 @@ public class FixedSizeListVectorTest {
       assertNotNull(embeddingsField);
       Metadata metadata = embeddingsField.metadata();
 
-      // The metadata should contain the fixed-size-list specification
-      // This will be converted to Arrow FixedSizeList during write operations
       if (metadata.contains("arrow.fixed-size-list.size")) {
         long size = metadata.getLong("arrow.fixed-size-list.size");
         assertEquals(128L, size);
       }
 
-      // Note: The table is created with ARRAY<FLOAT> schema that Spark can handle,
-      // but internally Lance stores it as FixedSizeList for efficient vector operations.
-
-      // Test: Insert and read back data to verify conversion works
+      // Insert data using SQL
       spark.sql(
           "INSERT INTO "
               + catalogName
@@ -110,7 +99,7 @@ public class FixedSizeListVectorTest {
                   .collect(java.util.stream.Collectors.joining(", "))
               + "))");
 
-      // Read back the data - this tests the FixedSizeList to Array conversion
+      // Read back the data
       Dataset<Row> result = spark.sql("SELECT * FROM " + catalogName + ".default." + tableName);
       assertEquals(1, result.count(), "Should have 1 row");
 
@@ -132,12 +121,12 @@ public class FixedSizeListVectorTest {
   }
 
   @Test
-  public void testDataFrameWriteWithFixedSizeList() {
+  public void testCreateTableWithMultipleVectorColumnsSQL() {
     String catalogName = "lance_test";
 
     SparkSession spark =
         SparkSession.builder()
-            .appName("dataframe-fixedsizelist-test")
+            .appName("multi-vector-sql-test")
             .master("local[*]")
             .config(
                 "spark.sql.catalog." + catalogName,
@@ -147,85 +136,7 @@ public class FixedSizeListVectorTest {
             .getOrCreate();
 
     try {
-      String tableName = "df_vector_table";
-      
-      // Create metadata for vector column - use Long value, not String
-      org.apache.spark.sql.types.Metadata vectorMetadata = 
-          org.apache.spark.sql.types.Metadata.fromJson(
-              "{\"arrow.fixed-size-list.size\":128}"
-          );
-      
-      // Create schema with vector column using DataFrame API
-      org.apache.spark.sql.types.StructType schema = new org.apache.spark.sql.types.StructType(
-          new org.apache.spark.sql.types.StructField[] {
-              org.apache.spark.sql.types.DataTypes.createStructField("id", 
-                  org.apache.spark.sql.types.DataTypes.IntegerType, false),
-              org.apache.spark.sql.types.DataTypes.createStructField("text", 
-                  org.apache.spark.sql.types.DataTypes.StringType, true),
-              new org.apache.spark.sql.types.StructField(
-                  "embeddings",
-                  org.apache.spark.sql.types.DataTypes.createArrayType(
-                      org.apache.spark.sql.types.DataTypes.FloatType, false),
-                  false,
-                  vectorMetadata
-              )
-          }
-      );
-      
-      // Create test data
-      java.util.List<org.apache.spark.sql.Row> rows = new java.util.ArrayList<>();
-      for (int i = 0; i < 10; i++) {
-        float[] vector = new float[128];
-        for (int j = 0; j < 128; j++) {
-          vector[j] = i * 0.01f + j * 0.001f;
-        }
-        rows.add(org.apache.spark.sql.RowFactory.create(i, "text_" + i, vector));
-      }
-      
-      Dataset<Row> df = spark.createDataFrame(rows, schema);
-      
-      // Write to Lance table using DataFrame API
-      df.writeTo(catalogName + ".default." + tableName)
-          .using("lance")
-          .createOrReplace();
-      
-      // Verify by reading back
-      Dataset<Row> result = spark.table(catalogName + ".default." + tableName);
-      assertEquals(10, result.count(), "Should have 10 rows");
-      
-      // Verify the array was read correctly
-      Row firstRow = result.first();
-      assertEquals(0, firstRow.getInt(0));
-      assertEquals("text_0", firstRow.getString(1));
-      scala.collection.mutable.WrappedArray<Float> embeddings =
-          (scala.collection.mutable.WrappedArray<Float>) firstRow.get(2);
-      assertEquals(128, embeddings.size(), "Embeddings should have 128 elements");
-      
-      // Clean up
-      spark.sql("DROP TABLE IF EXISTS " + catalogName + ".default." + tableName);
-      
-    } finally {
-      spark.stop();
-    }
-  }
-
-  @Test
-  public void testCreateTableWithMultipleVectorColumns() {
-    String catalogName = "lance_test";
-
-    SparkSession spark =
-        SparkSession.builder()
-            .appName("multi-vector-test")
-            .master("local[*]")
-            .config(
-                "spark.sql.catalog." + catalogName,
-                "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
-            .config("spark.sql.catalog." + catalogName + ".impl", "dir")
-            .config("spark.sql.catalog." + catalogName + ".root", tempDir.toString())
-            .getOrCreate();
-
-    try {
-      String tableName = "multi_vector_table";
+      String tableName = "multi_vector_table_sql";
 
       // Create table with multiple vector columns of different dimensions
       spark.sql(
@@ -247,11 +158,107 @@ public class FixedSizeListVectorTest {
               + ")");
 
       // Verify table was created
-      // The table should be readable as Spark sees it as multiple ARRAY<FLOAT> columns
-      // The conversion to FixedSizeList happens internally during write operations
       StructType schema = spark.table(catalogName + ".default." + tableName).schema();
       assertNotNull(schema);
       assertEquals(5, schema.fields().length);
+
+      // Insert test data using SQL
+      StringBuilder insertSQL = new StringBuilder();
+      insertSQL.append("INSERT INTO ").append(catalogName).append(".default.").append(tableName);
+      insertSQL.append(" VALUES (1, 'doc1', ");
+      
+      // title_embeddings: 64d
+      insertSQL.append("array(");
+      for (int i = 0; i < 64; i++) {
+        if (i > 0) insertSQL.append(", ");
+        insertSQL.append(i * 0.01f);
+      }
+      insertSQL.append("), ");
+      
+      // content_embeddings: 256d
+      insertSQL.append("array(");
+      for (int i = 0; i < 256; i++) {
+        if (i > 0) insertSQL.append(", ");
+        insertSQL.append(i * 0.002f);
+      }
+      insertSQL.append("), ");
+      
+      // summary_embeddings: 128d
+      insertSQL.append("array(");
+      for (int i = 0; i < 128; i++) {
+        if (i > 0) insertSQL.append(", ");
+        insertSQL.append(i * 0.005f);
+      }
+      insertSQL.append("))");
+      
+      spark.sql(insertSQL.toString());
+
+      // Verify data
+      Dataset<Row> result = spark.sql("SELECT * FROM " + catalogName + ".default." + tableName);
+      assertEquals(1, result.count());
+
+      // Clean up
+      spark.sql("DROP TABLE IF EXISTS " + catalogName + ".default." + tableName);
+
+    } finally {
+      spark.stop();
+    }
+  }
+
+  @Test
+  public void testMixedPrecisionVectorsSQL() {
+    String catalogName = "lance_test";
+
+    SparkSession spark =
+        SparkSession.builder()
+            .appName("mixed-precision-sql-test")
+            .master("local[*]")
+            .config(
+                "spark.sql.catalog." + catalogName,
+                "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+            .config("spark.sql.catalog." + catalogName + ".impl", "dir")
+            .config("spark.sql.catalog." + catalogName + ".root", tempDir.toString())
+            .getOrCreate();
+
+    try {
+      String tableName = "mixed_precision_sql";
+
+      // Create table with float and double vector columns
+      spark.sql(
+          "CREATE TABLE IF NOT EXISTS "
+              + catalogName
+              + ".default."
+              + tableName
+              + " ("
+              + "id INT NOT NULL, "
+              + "float_vec ARRAY<FLOAT> NOT NULL, "
+              + "double_vec ARRAY<DOUBLE> NOT NULL"
+              + ") USING lance "
+              + "TBLPROPERTIES ("
+              + "'float_vec.arrow.fixed-size-list.size' = '32', "
+              + "'double_vec.arrow.fixed-size-list.size' = '32'"
+              + ")");
+
+      // Insert data with different precision vectors
+      spark.sql(
+          "INSERT INTO "
+              + catalogName
+              + ".default."
+              + tableName
+              + " VALUES "
+              + "(1, array("
+              + java.util.stream.IntStream.range(0, 32)
+                  .mapToObj(i -> String.valueOf(i * 0.1f))
+                  .collect(java.util.stream.Collectors.joining(", "))
+              + "), array("
+              + java.util.stream.IntStream.range(0, 32)
+                  .mapToObj(i -> String.valueOf(i * 0.01))
+                  .collect(java.util.stream.Collectors.joining(", "))
+              + "))");
+
+      // Verify
+      Dataset<Row> result = spark.sql("SELECT * FROM " + catalogName + ".default." + tableName);
+      assertEquals(1, result.count());
 
       // Clean up
       spark.sql("DROP TABLE IF EXISTS " + catalogName + ".default." + tableName);

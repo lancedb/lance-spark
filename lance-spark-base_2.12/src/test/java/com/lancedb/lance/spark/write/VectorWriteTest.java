@@ -99,7 +99,14 @@ public class VectorWriteTest {
         .option(LanceConfig.CONFIG_DATASET_URI, outputPath)
         .save();
 
-    System.out.println("Float32 vector dataset written to: " + outputPath);
+    // Verify the dataset can be read back
+    Dataset<Row> readDf = spark.read()
+        .format(LanceDataSource.name)
+        .option(LanceConfig.CONFIG_DATASET_URI, outputPath)
+        .load();
+    
+    assert readDf.count() == numRows : "Row count mismatch";
+    System.out.println("Float32 vector dataset written and verified at: " + outputPath);
   }
 
   @Test
