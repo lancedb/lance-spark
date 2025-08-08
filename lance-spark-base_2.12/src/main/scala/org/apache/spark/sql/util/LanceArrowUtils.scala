@@ -37,9 +37,22 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConverters._
 
 object LanceArrowUtils {
+  val ARROW_FIXED_SIZE_LIST_SIZE_KEY = "arrow.fixed-size-list.size"
+
   def fromArrowField(field: Field): DataType = {
     field.getType match {
       case int: ArrowType.Int if !int.getIsSigned && int.getBitWidth == 8 * 8 => LongType
+      case fixedSizeList: ArrowType.FixedSizeList =>
+        // Convert FixedSizeList back to ArrayType for Spark
+        // The FixedSizeList has a single child field that describes the element type
+        val children = field.getChildren
+        if (children.isEmpty) {
+          throw new SparkException(s"FixedSizeList field ${field.getName} has no children")
+        }
+        val elementField = children.get(0)
+        val elementType = fromArrowField(elementField)
+        val containsNull = elementField.isNullable
+        ArrayType(elementType, containsNull)
       case _ => ArrowUtils.fromArrowField(field)
     }
   }
@@ -47,7 +60,15 @@ object LanceArrowUtils {
   def fromArrowSchema(schema: Schema): StructType = {
     StructType(schema.getFields.asScala.map { field =>
       val dt = fromArrowField(field)
-      StructField(field.getName, dt, field.isNullable)
+      // If the Arrow field was a FixedSizeList, add metadata to preserve the size information
+      val metadata = field.getType match {
+        case fixedSizeList: ArrowType.FixedSizeList =>
+          new MetadataBuilder()
+            .putLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY, fixedSizeList.getListSize)
+            .build()
+        case _ => Metadata.empty
+      }
+      StructField(field.getName, dt, field.isNullable, metadata)
     }.toArray)
   }
 
@@ -62,7 +83,8 @@ object LanceArrowUtils {
         deduplicateFieldNames(field.dataType, errorOnDuplicatedFieldNames),
         field.nullable,
         timeZoneId,
-        largeVarTypes)
+        largeVarTypes,
+        field.metadata)
     }.asJava)
   }
 
@@ -71,14 +93,26 @@ object LanceArrowUtils {
       dt: DataType,
       nullable: Boolean,
       timeZoneId: String,
-      largeVarTypes: Boolean = false): Field = {
+      largeVarTypes: Boolean = false,
+      metadata: org.apache.spark.sql.types.Metadata = null): Field = {
     dt match {
       case ArrayType(elementType, containsNull) =>
-        val fieldType = new FieldType(nullable, ArrowType.List.INSTANCE, null)
-        new Field(
-          name,
-          fieldType,
-          Seq(toArrowField("element", elementType, containsNull, timeZoneId, largeVarTypes)).asJava)
+        if (shouldBeFixedSizeList(metadata, elementType)) {
+          val listSize = metadata.getLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY).toInt
+          val fieldType = new FieldType(nullable, new ArrowType.FixedSizeList(listSize), null)
+          new Field(
+            name,
+            fieldType,
+            Seq(
+              toArrowField("element", elementType, containsNull, timeZoneId, largeVarTypes)).asJava)
+        } else {
+          val fieldType = new FieldType(nullable, ArrowType.List.INSTANCE, null)
+          new Field(
+            name,
+            fieldType,
+            Seq(
+              toArrowField("element", elementType, containsNull, timeZoneId, largeVarTypes)).asJava)
+        }
       case StructType(fields) =>
         val fieldType = new FieldType(nullable, ArrowType.Struct.INSTANCE, null)
         new Field(
@@ -182,6 +216,15 @@ object LanceArrowUtils {
         deduplicateFieldNames(valueType, errorOnDuplicatedFieldNames),
         valueContainsNull)
     case _ => dt
+  }
+
+  private def shouldBeFixedSizeList(
+      metadata: org.apache.spark.sql.types.Metadata,
+      elementType: DataType): Boolean = {
+    metadata != null &&
+    metadata.contains(ARROW_FIXED_SIZE_LIST_SIZE_KEY) &&
+    metadata.getLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY) > 0 &&
+    (elementType == FloatType || elementType == DoubleType)
   }
 
   /* Copy from copy of org.apache.spark.sql.errors.ExecutionErrors for Spark version compatibility */
