@@ -16,16 +16,9 @@ package com.lancedb.lance.spark;
 import com.lancedb.lance.ReadOptions;
 import com.lancedb.lance.WriteParams;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class SparkOptions {
-  private static final String ak = "access_key_id";
-  private static final String sk = "secret_access_key";
-  private static final String endpoint = "aws_endpoint";
-  private static final String region = "aws_region";
-  private static final String virtual_hosted_style = "virtual_hosted_style_request";
-  private static final String allow_http = "allow_http";
 
   private static final String block_size = "block_size";
   private static final String version = "version";
@@ -77,23 +70,7 @@ public class SparkOptions {
   }
 
   private static Map<String, String> genStorageOptions(LanceConfig config) {
-    Map<String, String> maps = config.getOptions();
-    Map<String, String> storageOptions = new HashMap<>();
-    if (maps.containsKey(ak) && maps.containsKey(sk) && maps.containsKey(endpoint)) {
-      storageOptions.put(ak, maps.get(ak));
-      storageOptions.put(sk, maps.get(sk));
-      storageOptions.put(endpoint, maps.get(endpoint));
-    }
-    if (maps.containsKey(region)) {
-      storageOptions.put(region, maps.get(region));
-    }
-    if (maps.containsKey(virtual_hosted_style)) {
-      storageOptions.put(virtual_hosted_style, maps.get(virtual_hosted_style));
-    }
-    if (maps.containsKey(allow_http)) {
-      storageOptions.put(allow_http, maps.get(allow_http));
-    }
-    return storageOptions;
+    return config.getOptions();
   }
 
   public static int getBatchSize(LanceConfig config) {

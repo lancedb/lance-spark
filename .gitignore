@@ -66,6 +66,11 @@ ENV/
 env.bak/
 venv.bak/
 
+# notebook
+**/.ipynb_checkpoints
+docker/*.jar
+
+
 # mkdocs documentation
 /docs/site
 

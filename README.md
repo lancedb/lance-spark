@@ -1,14 +1,6 @@
 # Apache Spark Connector for Lance
 
-![logo](./docs/src/logo/wide.png)
-
 The Apache Spark Connector for Lance allows Apache Spark to efficiently read datasets stored in Lance format.
-
-Lance is a modern columnar data format optimized for machine learning workflows and datasets,
-supporting distributed, parallel scans, and optimizations such as column and filter pushdown to improve performance.
-Additionally, Lance provides high-performance random access that is 100 times faster than Parquet 
-without sacrificing scan performance.
-
 By using the Apache Spark Connector for Lance, you can leverage Apache Spark's powerful data processing, SQL querying, 
 and machine learning training capabilities on the AI data lake powered by Lance.
 
@@ -23,7 +15,18 @@ Specifically, you can use the Apache Spark Connector for Lance to:
 * **Distributed, Parallel Scans**: Leverage Spark's distributed computing capabilities to perform parallel scans on Lance datasets.
 * **Column and Filter Pushdown**: Optimize query performance by pushing down column selections and filters to the data source.
 
-## User & Development Guide
+## Quick Start
 
-For the comprehensive user and development guide, 
-please visit the documentation website at https://lancedb.github.io/lance-spark.
+The project contains a docker image in the `docker` folder you can build and run a simple example notebook.
+To do so, clone the repo and run:
+
+```shell
+make docker-build
+make docker-up
+```
+
+And then open the notebook at `http://localhost:8888`.
+
+## Contributing
+
+See [contributing](docs/src/contributing.md) for the detailed contribution guidelines and local development setup.

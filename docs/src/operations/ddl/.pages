@@ -1,0 +1,11 @@
+title: DDL
+nav:
+  - create-namespace.md
+  - drop-namespace.md
+  - show-namespaces.md
+  - describe-namespace.md
+  - create-table.md
+  - dataframe-create-table.md
+  - show-tables.md
+  - describe-table.md
+  - drop-table.md

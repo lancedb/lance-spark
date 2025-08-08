@@ -1,0 +1,69 @@
+---
+services:
+  spark-lance:
+    image: spark-lance:latest
+    container_name: spark-lance
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - SPARK_VERSION=3.5.6
+        - LANCE_VERSION=0.0.5
+    networks:
+      lance_net:
+    depends_on:
+      - minio
+    volumes:
+      - ./warehouse:/home/lance/warehouse
+      - ./notebooks:/home/lance/notebooks
+      - ../lance-spark-bundle-3.5_2.12/target:/lance-jars
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+    ports:
+      - 8888:8888  # Jupyter Notebook
+      - 8080:8080  # Spark Master Web UI
+      - 7077:7077  # Spark Master Port
+      - 18080:18080  # Spark History Server
+      - 10000:10000  # Thrift JDBC/ODBC Server
+      - 10001:10001  # Thrift JDBC/ODBC Server HTTP
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=password
+      - MINIO_DOMAIN=minio
+    networks:
+      lance_net:
+        aliases:
+          - warehouse.minio
+    ports:
+      - 9001:9001  # MinIO Console
+      - 9000:9000  # MinIO API
+    command: ["server", "/data", "--console-address", ":9001"]
+
+  mc:
+    depends_on:
+      - minio
+    image: minio/mc
+    container_name: mc
+    networks:
+      lance_net:
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+    entrypoint: >
+      /bin/sh -c "
+      until (/usr/bin/mc alias set minio http://minio:9000 admin password) do echo '...waiting...' && sleep 1; done;
+      /usr/bin/mc rm -r --force minio/lance-warehouse;
+      /usr/bin/mc mb minio/lance-warehouse;
+      /usr/bin/mc anonymous set public minio/lance-warehouse;
+      tail -f /dev/null
+      "
+
+networks:
+  lance_net:
