@@ -405,7 +405,9 @@ public class LanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespa
       createRequest.setProperties(properties);
     }
 
-    JsonArrowSchema jsonSchema = SchemaConverter.toJsonArrowSchema(schema);
+    // Process schema with table properties to add metadata for vector columns
+    StructType processedSchema = SchemaConverter.processSchemaWithProperties(schema, properties);
+    JsonArrowSchema jsonSchema = SchemaConverter.toJsonArrowSchema(processedSchema);
     createRequest.setSchema(jsonSchema);
     byte[] emptyArrowData = createEmptyArrowIpcStream(jsonSchema);
     CreateTableResponse response = namespace.createTable(createRequest, emptyArrowData);
@@ -417,7 +419,7 @@ public class LanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespa
     }
 
     LanceConfig config = LanceConfig.from(storageOptions, response.getLocation());
-    return new LanceDataset(config, schema);
+    return new LanceDataset(config, processedSchema);
   }
 
   @Override

@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConverters._
 
 object LanceArrowUtils {
-  val ARROW_FIXED_SIZE_LIST_SIZE_KEY = "arrow.FixedSizeList.size"
+  val ARROW_FIXED_SIZE_LIST_SIZE_KEY = "arrow.fixed-size-list.size"
 
   def fromArrowField(field: Field): DataType = {
     field.getType match {

@@ -63,7 +63,7 @@ public class VectorWriteTest {
 
     // Create metadata for vector column
     Metadata vectorMetadata =
-        new MetadataBuilder().putLong("arrow.FixedSizeList.size", vectorDim).build();
+        new MetadataBuilder().putLong("arrow.fixed-size-list.size", vectorDim).build();
 
     // Create schema with vector column
     StructType schema =
@@ -109,7 +109,7 @@ public class VectorWriteTest {
 
     // Create metadata for vector column
     Metadata vectorMetadata =
-        new MetadataBuilder().putLong("arrow.FixedSizeList.size", vectorDim).build();
+        new MetadataBuilder().putLong("arrow.fixed-size-list.size", vectorDim).build();
 
     // Create schema with vector column
     StructType schema =
@@ -156,10 +156,10 @@ public class VectorWriteTest {
 
     // Create metadata for vector columns
     Metadata vectorMetadata1 =
-        new MetadataBuilder().putLong("arrow.FixedSizeList.size", vectorDim1).build();
+        new MetadataBuilder().putLong("arrow.fixed-size-list.size", vectorDim1).build();
 
     Metadata vectorMetadata2 =
-        new MetadataBuilder().putLong("arrow.FixedSizeList.size", vectorDim2).build();
+        new MetadataBuilder().putLong("arrow.fixed-size-list.size", vectorDim2).build();
 
     // Create schema with multiple vector columns
     StructType schema =
