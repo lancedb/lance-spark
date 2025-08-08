@@ -90,15 +90,6 @@ public class VectorCreateTableTest {
     boolean found = tableList.stream().anyMatch(row -> tableName.equals(row.getString(1)));
     assertTrue(found, "Table should be created");
 
-    // Show the schema
-    System.out.println("\n===== Table Schema for " + tableName + " =====");
-    spark.sql("DESCRIBE " + catalogName + ".default." + tableName).show();
-
-    // Also print the detailed schema
-    Dataset<Row> tableDs = spark.table(catalogName + ".default." + tableName);
-    System.out.println("\nDataFrame Schema:");
-    tableDs.printSchema();
-
     // Insert data using SQL
     spark.sql(
         "INSERT INTO "

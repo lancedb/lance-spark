@@ -42,6 +42,17 @@ object LanceArrowUtils {
   def fromArrowField(field: Field): DataType = {
     field.getType match {
       case int: ArrowType.Int if !int.getIsSigned && int.getBitWidth == 8 * 8 => LongType
+      case fixedSizeList: ArrowType.FixedSizeList =>
+        // Convert FixedSizeList back to ArrayType for Spark
+        // The FixedSizeList has a single child field that describes the element type
+        val children = field.getChildren
+        if (children.isEmpty) {
+          throw new SparkException(s"FixedSizeList field ${field.getName} has no children")
+        }
+        val elementField = children.get(0)
+        val elementType = fromArrowField(elementField)
+        val containsNull = elementField.isNullable
+        ArrayType(elementType, containsNull)
       case _ => ArrowUtils.fromArrowField(field)
     }
   }
@@ -49,7 +60,15 @@ object LanceArrowUtils {
   def fromArrowSchema(schema: Schema): StructType = {
     StructType(schema.getFields.asScala.map { field =>
       val dt = fromArrowField(field)
-      StructField(field.getName, dt, field.isNullable)
+      // If the Arrow field was a FixedSizeList, add metadata to preserve the size information
+      val metadata = field.getType match {
+        case fixedSizeList: ArrowType.FixedSizeList =>
+          new MetadataBuilder()
+            .putLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY, fixedSizeList.getListSize)
+            .build()
+        case _ => Metadata.empty
+      }
+      StructField(field.getName, dt, field.isNullable, metadata)
     }.toArray)
   }
 
