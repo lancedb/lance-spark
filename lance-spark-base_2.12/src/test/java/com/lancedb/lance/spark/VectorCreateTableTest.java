@@ -69,8 +69,6 @@ public class VectorCreateTableTest {
   public void testCreateEmptyTableWithVectorAndSQLInsert() {
     String tableName = "vector_empty_table_" + System.currentTimeMillis();
 
-    System.out.println("\n===== Creating table: " + tableName + " =====");
-    
     // Create empty table with vector column using TBLPROPERTIES
     spark.sql(
         "CREATE TABLE IF NOT EXISTS "

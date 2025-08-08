@@ -224,17 +224,35 @@ public class SchemaConverter {
       dataType.setType("interval");
     } else if (sparkType instanceof ArrayType) {
       ArrayType arrayType = (ArrayType) sparkType;
-      // Always use "list" type for arrays, regardless of metadata
-      // The actual FixedSizeList conversion happens during data writing
-      dataType.setType("list");
-      // Create element field
-      JsonArrowField elementField = new JsonArrowField();
-      elementField.setName("element");
-      elementField.setNullable(arrayType.containsNull());
-      elementField.setType(toJsonArrowDataType(arrayType.elementType(), "element", null));
+
+      // Check if this should be a FixedSizeList based on metadata
+      boolean isFixedSizeList = false;
+      Long fixedSize = null;
+      if (metadata != null && metadata.contains("arrow.fixed-size-list.size")) {
+        try {
+          fixedSize = metadata.getLong("arrow.fixed-size-list.size");
+          isFixedSizeList = true;
+        } catch (Exception e) {
+          // Fall back to regular list if metadata is invalid
+        }
+      }
+
+      if (isFixedSizeList && fixedSize != null) {
+        dataType.setType("fixedsizelist");
+        dataType.setLength(fixedSize);
+      } else {
+        dataType.setType("list");
+      }
+
+      // Create item field (Arrow convention for list child field)
+      JsonArrowField itemField = new JsonArrowField();
+      itemField.setName("item");
+      itemField.setNullable(arrayType.containsNull());
+      itemField.setType(toJsonArrowDataType(arrayType.elementType(), "item", null));
       List<JsonArrowField> fields = new ArrayList<>();
-      fields.add(elementField);
+      fields.add(itemField);
       dataType.setFields(fields);
+
     } else if (sparkType instanceof StructType) {
       StructType structType = (StructType) sparkType;
       dataType.setType("struct");
