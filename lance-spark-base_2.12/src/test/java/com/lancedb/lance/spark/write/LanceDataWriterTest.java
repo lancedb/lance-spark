@@ -13,9 +13,12 @@
  */
 package com.lancedb.lance.spark.write;
 
+import com.google.common.collect.ImmutableMap;
+import com.lancedb.lance.Dataset;
 import com.lancedb.lance.FragmentMetadata;
+import com.lancedb.lance.FragmentOperation;
+import com.lancedb.lance.WriteParams;
 import com.lancedb.lance.spark.LanceConfig;
-
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.memory.RootAllocator;
 import org.apache.arrow.vector.types.pojo.ArrowType;

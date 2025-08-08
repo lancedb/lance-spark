@@ -35,7 +35,7 @@ import org.scalatest.funsuite.AnyFunSuite
 class LanceArrowColumnVectorSuite extends AnyFunSuite {
   test("boolean") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("boolean", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("boolean", BooleanType, nullable = true, null)
+    val vector = LanceArrowUtils.toArrowField("boolean", BooleanType, nullable = true, null, null)
       .createVector(allocator).asInstanceOf[BitVector]
     vector.allocateNew()
 
@@ -63,7 +63,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("byte") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("byte", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("byte", ByteType, nullable = true, null)
+    val vector = LanceArrowUtils.toArrowField("byte", ByteType, nullable = true, null, null)
       .createVector(allocator).asInstanceOf[TinyIntVector]
     vector.allocateNew()
 
@@ -91,7 +91,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("short") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("short", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("short", ShortType, nullable = true, null)
+    val vector = LanceArrowUtils.toArrowField("short", ShortType, nullable = true, null, null)
       .createVector(allocator).asInstanceOf[SmallIntVector]
     vector.allocateNew()
 
@@ -119,7 +119,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("int") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("int", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("int", IntegerType, nullable = true, null)
+    val vector = LanceArrowUtils.toArrowField("int", IntegerType, nullable = true, null, null)
       .createVector(allocator).asInstanceOf[IntVector]
     vector.allocateNew()
 
@@ -147,7 +147,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("long") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("long", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("long", LongType, nullable = true, null)
+    val vector = LanceArrowUtils.toArrowField("long", LongType, nullable = true, null, null)
       .createVector(allocator).asInstanceOf[BigIntVector]
     vector.allocateNew()
 
@@ -175,8 +175,9 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("unsigned long") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("unsigned long", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField(LanceConstant.ROW_ID, LongType, nullable = true, null)
-      .createVector(allocator).asInstanceOf[UInt8Vector]
+    val vector =
+      LanceArrowUtils.toArrowField(LanceConstant.ROW_ID, LongType, nullable = true, null, null)
+        .createVector(allocator).asInstanceOf[UInt8Vector]
     vector.allocateNew()
 
     (0 until 10).foreach { i =>
@@ -203,7 +204,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("float") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("float", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("float", FloatType, nullable = true, null)
+    val vector = LanceArrowUtils.toArrowField("float", FloatType, nullable = true, null, null)
       .createVector(allocator).asInstanceOf[Float4Vector]
     vector.allocateNew()
 
@@ -231,7 +232,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("double") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("double", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("double", DoubleType, nullable = true, null)
+    val vector = LanceArrowUtils.toArrowField("double", DoubleType, nullable = true, null, null)
       .createVector(allocator).asInstanceOf[Float8Vector]
     vector.allocateNew()
 
@@ -259,7 +260,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("string") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("string", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("string", StringType, nullable = true, null)
+    val vector = LanceArrowUtils.toArrowField("string", StringType, nullable = true, null, null)
       .createVector(allocator).asInstanceOf[VarCharVector]
     vector.allocateNew()
 
@@ -286,8 +287,9 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("large_string") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("string", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("string", StringType, nullable = true, null, true)
-      .createVector(allocator).asInstanceOf[LargeVarCharVector]
+    val vector =
+      LanceArrowUtils.toArrowField("string", StringType, nullable = true, null, null, true)
+        .createVector(allocator).asInstanceOf[LargeVarCharVector]
     vector.allocateNew()
 
     (0 until 10).foreach { i =>
@@ -313,7 +315,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("binary") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("binary", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("binary", BinaryType, nullable = true, null, false)
+    val vector = LanceArrowUtils.toArrowField("binary", BinaryType, nullable = true, null, null)
       .createVector(allocator).asInstanceOf[VarBinaryVector]
     vector.allocateNew()
 
@@ -340,8 +342,9 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
 
   test("large_binary") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("binary", 0, Long.MaxValue)
-    val vector = LanceArrowUtils.toArrowField("binary", BinaryType, nullable = true, null, true)
-      .createVector(allocator).asInstanceOf[LargeVarBinaryVector]
+    val vector =
+      LanceArrowUtils.toArrowField("binary", BinaryType, nullable = true, null, null, true)
+        .createVector(allocator).asInstanceOf[LargeVarBinaryVector]
     vector.allocateNew()
 
     (0 until 10).foreach { i =>
@@ -368,7 +371,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
   test("array") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("array", 0, Long.MaxValue)
     val vector =
-      LanceArrowUtils.toArrowField("array", ArrayType(IntegerType), nullable = true, null)
+      LanceArrowUtils.toArrowField("array", ArrayType(IntegerType), nullable = true, null, null)
         .createVector(allocator).asInstanceOf[ListVector]
     vector.allocateNew()
     val elementVector = vector.getDataVector().asInstanceOf[IntVector]
@@ -423,7 +426,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
   test("non nullable struct") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("struct", 0, Long.MaxValue)
     val schema = new StructType().add("int", IntegerType).add("long", LongType)
-    val vector = LanceArrowUtils.toArrowField("struct", schema, nullable = false, null)
+    val vector = LanceArrowUtils.toArrowField("struct", schema, nullable = false, null, null)
       .createVector(allocator).asInstanceOf[StructVector]
 
     vector.allocateNew()
@@ -460,7 +463,7 @@ class LanceArrowColumnVectorSuite extends AnyFunSuite {
   test("struct") {
     val allocator = ArrowUtils.rootAllocator.newChildAllocator("struct", 0, Long.MaxValue)
     val schema = new StructType().add("int", IntegerType).add("long", LongType)
-    val vector = LanceArrowUtils.toArrowField("struct", schema, nullable = true, null)
+    val vector = LanceArrowUtils.toArrowField("struct", schema, nullable = true, null, null)
       .createVector(allocator).asInstanceOf[StructVector]
     vector.allocateNew()
     val intVector = vector.getChildByOrdinal(0).asInstanceOf[IntVector]
