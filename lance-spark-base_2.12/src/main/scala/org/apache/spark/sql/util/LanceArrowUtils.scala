@@ -30,6 +30,8 @@ import org.apache.arrow.vector.types.{DateUnit, FloatingPointPrecision, Interval
 import org.apache.arrow.vector.types.pojo.{ArrowType, Field, FieldType, Schema}
 import org.apache.spark.{SparkException, SparkUnsupportedOperationException}
 import org.apache.spark.sql.types._
+import org.json4s.{DefaultFormats, Formats}
+import org.json4s.JsonAST.{JObject, JString}
 
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
@@ -38,6 +40,7 @@ import scala.collection.JavaConverters._
 
 object LanceArrowUtils {
   val ARROW_FIXED_SIZE_LIST_SIZE_KEY = "arrow.fixed-size-list.size"
+  val ENCODING_BLOB = "lance-encoding:blob"
 
   def fromArrowField(field: Field): DataType = {
     field.getType match {
@@ -66,7 +69,8 @@ object LanceArrowUtils {
           new MetadataBuilder()
             .putLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY, fixedSizeList.getListSize)
             .build()
-        case _ => Metadata.empty
+        case _ => Metadata.fromJObject(
+            JObject(field.getMetadata.asScala.map { case (k, v) => (k, JString(v)) }.toList))
       }
       StructField(field.getName, dt, field.isNullable, metadata)
     }.toArray)
@@ -95,34 +99,48 @@ object LanceArrowUtils {
       timeZoneId: String,
       largeVarTypes: Boolean = false,
       metadata: org.apache.spark.sql.types.Metadata = null): Field = {
+    var large: Boolean = largeVarTypes
+    var meta: Map[String, String] = Map.empty
+
+    if (metadata != null) {
+      if (metadata.contains(ENCODING_BLOB)
+        && metadata.getString(ENCODING_BLOB).equalsIgnoreCase("true")) {
+        large = true
+      }
+
+      implicit val formats: Formats = DefaultFormats
+      meta = metadata.jsonValue.extract[Map[String, String]]
+    }
+
     dt match {
       case ArrayType(elementType, containsNull) =>
         if (shouldBeFixedSizeList(metadata, elementType)) {
           val listSize = metadata.getLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY).toInt
-          val fieldType = new FieldType(nullable, new ArrowType.FixedSizeList(listSize), null)
+          val fieldType =
+            new FieldType(nullable, new ArrowType.FixedSizeList(listSize), null, meta.asJava)
           new Field(
             name,
             fieldType,
             Seq(
-              toArrowField("element", elementType, containsNull, timeZoneId, largeVarTypes)).asJava)
+              toArrowField("element", elementType, containsNull, timeZoneId, large)).asJava)
         } else {
-          val fieldType = new FieldType(nullable, ArrowType.List.INSTANCE, null)
+          val fieldType = new FieldType(nullable, ArrowType.List.INSTANCE, null, meta.asJava)
           new Field(
             name,
             fieldType,
             Seq(
-              toArrowField("element", elementType, containsNull, timeZoneId, largeVarTypes)).asJava)
+              toArrowField("element", elementType, containsNull, timeZoneId, large)).asJava)
         }
       case StructType(fields) =>
-        val fieldType = new FieldType(nullable, ArrowType.Struct.INSTANCE, null)
+        val fieldType = new FieldType(nullable, ArrowType.Struct.INSTANCE, null, meta.asJava)
         new Field(
           name,
           fieldType,
           fields.map { field =>
-            toArrowField(field.name, field.dataType, field.nullable, timeZoneId, largeVarTypes)
+            toArrowField(field.name, field.dataType, field.nullable, timeZoneId, large)
           }.toSeq.asJava)
       case MapType(keyType, valueType, valueContainsNull) =>
-        val mapType = new FieldType(nullable, new ArrowType.Map(false), null)
+        val mapType = new FieldType(nullable, new ArrowType.Map(false), null, meta.asJava)
         // Note: Map Type struct can not be null, Struct Type key field can not be null
         new Field(
           name,
@@ -139,7 +157,7 @@ object LanceArrowUtils {
         toArrowField(name, udt.sqlType, nullable, timeZoneId, largeVarTypes)
       case dataType =>
         val fieldType =
-          new FieldType(nullable, toArrowType(dataType, timeZoneId, largeVarTypes, name), null)
+          new FieldType(nullable, toArrowType(dataType, timeZoneId, large, name), null, meta.asJava)
         new Field(name, fieldType, Seq.empty[Field].asJava)
     }
   }
