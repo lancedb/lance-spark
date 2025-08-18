@@ -14,6 +14,7 @@
 package com.lancedb.lance.spark;
 
 public class LanceConstant {
+  public static final String SEGMENT_ID = "_segmentid";
   public static final String ROW_ID = "_rowid";
   public static final String ROW_ADDRESS = "_rowaddr";
 }

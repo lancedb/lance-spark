@@ -14,6 +14,7 @@
 package com.lancedb.lance.spark.internal;
 
 import com.lancedb.lance.*;
+import com.lancedb.lance.operation.Update;
 import com.lancedb.lance.spark.LanceConfig;
 import com.lancedb.lance.spark.SparkOptions;
 import com.lancedb.lance.spark.read.LanceInputPartition;
@@ -120,6 +121,35 @@ public class LanceDatasetAdapter {
               java.util.Optional.of(datasetRead.version()),
               options.getStorageOptions())
           .close();
+    }
+  }
+
+  public static void updateFragments(
+      LanceConfig config,
+      List<Long> removedFragmentIds,
+      List<FragmentMetadata> updatedFragments,
+      List<FragmentMetadata> newFragments) {
+
+    String uri = config.getDatasetUri();
+    ReadOptions options = SparkOptions.genReadOptionFromConfig(config);
+    try (Dataset dataset = Dataset.open(allocator, uri, options)) {
+      Update update =
+          Update.builder()
+              .removedFragmentIds(removedFragmentIds)
+              .updatedFragments(updatedFragments)
+              .newFragments(newFragments)
+              .build();
+
+      dataset.newTransactionBuilder().operation(update).build().commit();
+    }
+  }
+
+  public static FragmentMetadata deleteRows(
+      LanceConfig config, int fragmentId, List<Integer> rowIndexes) {
+    String uri = config.getDatasetUri();
+    ReadOptions options = SparkOptions.genReadOptionFromConfig(config);
+    try (Dataset dataset = Dataset.open(allocator, uri, options)) {
+      return dataset.getFragment(fragmentId).deleteRows(rowIndexes);
     }
   }
 

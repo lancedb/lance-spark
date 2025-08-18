@@ -36,7 +36,7 @@ public class LanceDataWriter implements DataWriter<InternalRow> {
   private FutureTask<List<FragmentMetadata>> fragmentCreationTask;
   private Thread fragmentCreationThread;
 
-  private LanceDataWriter(
+  public LanceDataWriter(
       LanceArrowWriter arrowWriter,
       FutureTask<List<FragmentMetadata>> fragmentCreationTask,
       Thread fragmentCreationThread) {
