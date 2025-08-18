@@ -111,7 +111,7 @@ public class LanceFragmentScanner implements AutoCloseable {
     return Arrays.stream(schema.fields())
         .map(StructField::name)
         .filter(
-            name -> !name.equals(LanceConstant.ROW_ID) && !name.equals(LanceConstant.ROW_ADDRESS))
+            name -> !name.equals(LanceConstant.SEGMENT_ID) && !name.equals(LanceConstant.ROW_ID) && !name.equals(LanceConstant.ROW_ADDRESS))
         .collect(Collectors.toList());
   }
 

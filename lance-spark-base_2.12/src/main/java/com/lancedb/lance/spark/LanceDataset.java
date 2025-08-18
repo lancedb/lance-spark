@@ -13,17 +13,19 @@
  */
 package com.lancedb.lance.spark;
 
+import com.google.common.collect.ImmutableSet;
 import com.lancedb.lance.spark.read.LanceScanBuilder;
 import com.lancedb.lance.spark.write.SparkWrite;
-
-import com.google.common.collect.ImmutableSet;
 import org.apache.spark.sql.connector.catalog.MetadataColumn;
 import org.apache.spark.sql.connector.catalog.SupportsMetadataColumns;
 import org.apache.spark.sql.connector.catalog.SupportsRead;
+import org.apache.spark.sql.connector.catalog.SupportsRowLevelOperations;
 import org.apache.spark.sql.connector.catalog.SupportsWrite;
 import org.apache.spark.sql.connector.catalog.TableCapability;
 import org.apache.spark.sql.connector.read.ScanBuilder;
 import org.apache.spark.sql.connector.write.LogicalWriteInfo;
+import org.apache.spark.sql.connector.write.RowLevelOperationBuilder;
+import org.apache.spark.sql.connector.write.RowLevelOperationInfo;
 import org.apache.spark.sql.connector.write.WriteBuilder;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
@@ -33,13 +35,30 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Set;
 
 /** Lance Spark Dataset. */
-public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetadataColumns {
+public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetadataColumns, SupportsRowLevelOperations {
   private static final Set<TableCapability> CAPABILITIES =
       ImmutableSet.of(
           TableCapability.BATCH_READ, TableCapability.BATCH_WRITE, TableCapability.TRUNCATE);
 
   public static final MetadataColumn[] METADATA_COLUMNS =
       new MetadataColumn[] {
+        new MetadataColumn() {
+          @Override
+          public String name() {
+            return LanceConstant.SEGMENT_ID;
+          }
+
+          @Override
+          public DataType dataType() {
+            return DataTypes.LongType;
+          }
+
+          @Override
+          public boolean isNullable() {
+            return false;
+          }
+        },
+
         new MetadataColumn() {
           @Override
           public String name() {
@@ -51,6 +70,7 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
             return DataTypes.LongType;
           }
         },
+
         new MetadataColumn() {
           @Override
           public String name() {
@@ -60,6 +80,11 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
           @Override
           public DataType dataType() {
             return DataTypes.LongType;
+          }
+
+          @Override
+          public boolean isNullable() {
+            return false;
           }
         },
       };
@@ -106,5 +131,10 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
   @Override
   public MetadataColumn[] metadataColumns() {
     return METADATA_COLUMNS;
+  }
+
+  @Override
+  public RowLevelOperationBuilder newRowLevelOperationBuilder(RowLevelOperationInfo rowLevelOperationInfo) {
+    return new LanceRowLevelOperationBuilder(rowLevelOperationInfo.command(), sparkSchema, config);
   }
 }
