@@ -109,7 +109,7 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
     private final StructType sparkSchema;
     private final LanceConfig config;
 
-    public PositionDeltaWriteFactory(StructType sparkSchema, LanceConfig config) {
+    PositionDeltaWriteFactory(StructType sparkSchema, LanceConfig config) {
       this.sparkSchema = sparkSchema;
       this.config = config;
     }
