@@ -13,9 +13,10 @@
  */
 package com.lancedb.lance.spark;
 
-import com.google.common.collect.ImmutableSet;
 import com.lancedb.lance.spark.read.LanceScanBuilder;
 import com.lancedb.lance.spark.write.SparkWrite;
+
+import com.google.common.collect.ImmutableSet;
 import org.apache.spark.sql.connector.catalog.MetadataColumn;
 import org.apache.spark.sql.connector.catalog.SupportsMetadataColumns;
 import org.apache.spark.sql.connector.catalog.SupportsRead;
@@ -35,7 +36,8 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Set;
 
 /** Lance Spark Dataset. */
-public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetadataColumns, SupportsRowLevelOperations {
+public class LanceDataset
+    implements SupportsRead, SupportsWrite, SupportsMetadataColumns, SupportsRowLevelOperations {
   private static final Set<TableCapability> CAPABILITIES =
       ImmutableSet.of(
           TableCapability.BATCH_READ, TableCapability.BATCH_WRITE, TableCapability.TRUNCATE);
@@ -50,7 +52,7 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
 
           @Override
           public DataType dataType() {
-            return DataTypes.LongType;
+            return DataTypes.IntegerType;
           }
 
           @Override
@@ -58,7 +60,6 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
             return false;
           }
         },
-
         new MetadataColumn() {
           @Override
           public String name() {
@@ -70,7 +71,6 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
             return DataTypes.LongType;
           }
         },
-
         new MetadataColumn() {
           @Override
           public String name() {
@@ -134,7 +134,8 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
   }
 
   @Override
-  public RowLevelOperationBuilder newRowLevelOperationBuilder(RowLevelOperationInfo rowLevelOperationInfo) {
+  public RowLevelOperationBuilder newRowLevelOperationBuilder(
+      RowLevelOperationInfo rowLevelOperationInfo) {
     return new LanceRowLevelOperationBuilder(rowLevelOperationInfo.command(), sparkSchema, config);
   }
 }

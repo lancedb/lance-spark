@@ -14,14 +14,11 @@
 package com.lancedb.lance.spark;
 
 import com.lancedb.lance.namespace.dir.DirectoryNamespaceConfig;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
+
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** Test for LanceNamespaceSparkCatalog using DirectoryNamespace implementation. */
 public class TestSparkUpdate extends SparkLanceNamespaceTestBase {
@@ -61,8 +58,13 @@ public class TestSparkUpdate extends SparkLanceNamespaceTestBase {
             + "(2, 'Bob', 200.0), "
             + "(3, 'Charlie', 300.0)");
 
-    Dataset<Row> result = spark.sql("Update " + catalogName + ".default." + tableName + " set value = 1000 where id = 1");
+    String select = "Select * from " + catalogName + ".default." + tableName;
+    System.out.println(spark.sql(select).collectAsList());
 
-    System.out.println(result.collectAsList());
+    spark.sql(
+        "Update " + catalogName + ".default." + tableName + " set value = value + 1 where id = 2");
+
+    System.out.println("===============");
+    System.out.println(spark.sql(select).collectAsList());
   }
 }

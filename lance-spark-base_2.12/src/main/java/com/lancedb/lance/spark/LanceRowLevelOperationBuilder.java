@@ -11,7 +11,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.lancedb.lance.spark;
 
 import org.apache.spark.sql.connector.write.RowLevelOperation;
@@ -23,7 +22,8 @@ public class LanceRowLevelOperationBuilder implements RowLevelOperationBuilder {
   private final StructType sparkSchema;
   private final LanceConfig config;
 
-  public LanceRowLevelOperationBuilder(RowLevelOperation.Command command, StructType sparkSchema, LanceConfig config) {
+  public LanceRowLevelOperationBuilder(
+      RowLevelOperation.Command command, StructType sparkSchema, LanceConfig config) {
     this.command = command;
     this.sparkSchema = sparkSchema;
     this.config = config;

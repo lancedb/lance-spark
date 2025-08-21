@@ -1,7 +1,25 @@
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.lancedb.lance.spark.write;
 
+import com.lancedb.lance.FragmentMetadata;
+import com.lancedb.lance.WriteParams;
 import com.lancedb.lance.spark.LanceConfig;
 import com.lancedb.lance.spark.LanceConstant;
+import com.lancedb.lance.spark.SparkOptions;
+import com.lancedb.lance.spark.internal.LanceDatasetAdapter;
+
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.connector.distributions.Distribution;
 import org.apache.spark.sql.connector.distributions.Distributions;
@@ -21,6 +39,13 @@ import org.apache.spark.sql.connector.write.WriterCommitMessage;
 import org.apache.spark.sql.types.StructType;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
 
 public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistributionAndOrdering {
   private final StructType sparkSchema;
@@ -34,14 +59,15 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
   @Override
   public Distribution requiredDistribution() {
     NamedReference segmentId = Expressions.column(LanceConstant.SEGMENT_ID);
-    return Distributions.clustered(new NamedReference[]{segmentId});
+    return Distributions.clustered(new NamedReference[] {segmentId});
   }
 
   @Override
   public SortOrder[] requiredOrdering() {
     NamedReference segmentId = Expressions.column(LanceConstant.ROW_ADDRESS);
-    SortValue sortValue = new SortValue(segmentId, SortDirection.ASCENDING, NullOrdering.NULLS_FIRST);
-    return new SortValue[]{sortValue};
+    SortValue sortValue =
+        new SortValue(segmentId, SortDirection.ASCENDING, NullOrdering.NULLS_FIRST);
+    return new SortValue[] {sortValue};
   }
 
   @Override
@@ -53,58 +79,149 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
 
     @Override
     public DeltaWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new PositionDeltaWriteFactory();
+      return new PositionDeltaWriteFactory(sparkSchema, config);
     }
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      List<Long> removedFragmentIds = new ArrayList<>();
+      List<FragmentMetadata> updatedFragments = new ArrayList<>();
+      List<FragmentMetadata> newFragments = new ArrayList<>();
 
+      Arrays.stream(messages)
+          .map(m -> (SparkPositionDeltaWrite.DeltaWriteTaskCommit) m)
+          .forEach(
+              m -> {
+                removedFragmentIds.addAll(m.removedFragmentIds());
+                updatedFragments.addAll(m.updatedFragments());
+                newFragments.addAll(m.newFragments());
+              });
+
+      LanceDatasetAdapter.updateFragments(
+          config, removedFragmentIds, updatedFragments, newFragments);
     }
 
     @Override
-    public void abort(WriterCommitMessage[] messages) {
-
-    }
+    public void abort(WriterCommitMessage[] messages) {}
   }
 
   private static class PositionDeltaWriteFactory implements DeltaWriterFactory {
+    private final StructType sparkSchema;
+    private final LanceConfig config;
+
+    public PositionDeltaWriteFactory(StructType sparkSchema, LanceConfig config) {
+      this.sparkSchema = sparkSchema;
+      this.config = config;
+    }
 
     @Override
     public DeltaWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      return null;
+      int batch_size = SparkOptions.getBatchSize(config);
+      LanceArrowWriter arrowWriter = LanceDatasetAdapter.getArrowWriter(sparkSchema, batch_size);
+      WriteParams params = SparkOptions.genWriteParamsFromConfig(config);
+      Callable<List<FragmentMetadata>> fragmentCreator =
+          () -> LanceDatasetAdapter.createFragment(config.getDatasetUri(), arrowWriter, params);
+      FutureTask<List<FragmentMetadata>> fragmentCreationTask = new FutureTask<>(fragmentCreator);
+      Thread fragmentCreationThread = new Thread(fragmentCreationTask);
+      fragmentCreationThread.start();
+
+      return new LanceDeltaWriter(
+          config, new LanceDataWriter(arrowWriter, fragmentCreationTask, fragmentCreationThread));
     }
   }
 
   private static class LanceDeltaWriter implements DeltaWriter<InternalRow> {
+    private final LanceConfig config;
+    private final LanceDataWriter writer;
+    private final List<Long> addrs;
+    private int fragmentId = -1;
+
+    private LanceDeltaWriter(LanceConfig config, LanceDataWriter writer) {
+      this.config = config;
+      this.writer = writer;
+      this.addrs = new LinkedList<>();
+    }
 
     @Override
     public void delete(InternalRow metadata, InternalRow id) throws IOException {
+      this.addrs.add(id.getLong(0));
 
+      int fragmentId = metadata.getInt(0);
+      if (this.fragmentId == -1) {
+        this.fragmentId = fragmentId;
+      } else {
+        if (this.fragmentId != fragmentId) {
+          throw new IOException("Delete across fragment is not supported");
+        }
+      }
     }
 
     @Override
     public void update(InternalRow metadata, InternalRow id, InternalRow row) throws IOException {
-
+      throw new UnsupportedOperationException("Update is not supported");
     }
 
     @Override
     public void insert(InternalRow row) throws IOException {
-
+      writer.write(row);
     }
 
     @Override
     public WriterCommitMessage commit() throws IOException {
-      return null;
+      LanceBatchWrite.TaskCommit append = (LanceBatchWrite.TaskCommit) writer.commit();
+      List<FragmentMetadata> newFragments = append.getFragments();
+
+      List<Long> removedFragmentIds = new ArrayList<>();
+      List<FragmentMetadata> updatedFragments = new ArrayList<>();
+
+      if (!addrs.isEmpty()) {
+        FragmentMetadata updatedFragment =
+            LanceDatasetAdapter.deleteByAddrs(config, this.fragmentId, addrs);
+        if (updatedFragment != null) {
+          updatedFragments.add(updatedFragment);
+        } else {
+          removedFragmentIds.add(Long.valueOf(this.fragmentId));
+        }
+      }
+
+      return new DeltaWriteTaskCommit(removedFragmentIds, updatedFragments, newFragments);
     }
 
     @Override
     public void abort() throws IOException {
-
+      writer.abort();
     }
 
     @Override
     public void close() throws IOException {
+      writer.close();
+    }
+  }
 
+  private static class DeltaWriteTaskCommit implements WriterCommitMessage {
+    private List<Long> removedFragmentIds;
+    private List<FragmentMetadata> updatedFragments;
+    private List<FragmentMetadata> newFragments;
+
+    DeltaWriteTaskCommit(
+        List<Long> removedFragmentIds,
+        List<FragmentMetadata> updatedFragments,
+        List<FragmentMetadata> newFragments) {
+      this.removedFragmentIds = removedFragmentIds;
+      this.updatedFragments = updatedFragments;
+      this.newFragments = newFragments;
+    }
+
+    public List<Long> removedFragmentIds() {
+      return removedFragmentIds == null ? Collections.emptyList() : removedFragmentIds;
+    }
+
+    public List<FragmentMetadata> updatedFragments() {
+      return updatedFragments == null ? Collections.emptyList() : updatedFragments;
+    }
+
+    public List<FragmentMetadata> newFragments() {
+      return newFragments == null ? Collections.emptyList() : newFragments;
     }
   }
 }
