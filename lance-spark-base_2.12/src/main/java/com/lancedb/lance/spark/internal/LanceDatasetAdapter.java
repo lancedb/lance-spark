@@ -149,7 +149,7 @@ public class LanceDatasetAdapter {
     String uri = config.getDatasetUri();
     ReadOptions options = SparkOptions.genReadOptionFromConfig(config);
     try (Dataset dataset = Dataset.open(allocator, uri, options)) {
-      return dataset.deleteByAddrs(fragmentId, addrs);
+      return dataset.getFragment(fragmentId).deleteByAddrs(addrs);
     }
   }
 

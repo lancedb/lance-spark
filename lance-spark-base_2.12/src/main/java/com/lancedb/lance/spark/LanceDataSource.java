@@ -26,7 +26,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.Map;
 
-public class LanceDataSource implements SupportsCatalogOptions, DataSourceRegister {
+public abstract class LanceDataSource implements SupportsCatalogOptions, DataSourceRegister {
   public static final String name = "lance";
 
   @Override
@@ -38,7 +38,7 @@ public class LanceDataSource implements SupportsCatalogOptions, DataSourceRegist
   @Override
   public Table getTable(
       StructType schema, Transform[] partitioning, Map<String, String> properties) {
-    return new LanceDataset(LanceConfig.from(properties), schema);
+    return createDataset(LanceConfig.from(properties), schema);
   }
 
   @Override
@@ -55,4 +55,6 @@ public class LanceDataSource implements SupportsCatalogOptions, DataSourceRegist
   public String extractCatalog(CaseInsensitiveStringMap options) {
     return "lance";
   }
+
+  public abstract LanceDataset createDataset(LanceConfig config, StructType sparkSchema);
 }

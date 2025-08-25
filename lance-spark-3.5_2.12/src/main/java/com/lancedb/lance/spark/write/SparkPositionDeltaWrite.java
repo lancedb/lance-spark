@@ -89,7 +89,7 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
       List<FragmentMetadata> newFragments = new ArrayList<>();
 
       Arrays.stream(messages)
-          .map(m -> (SparkPositionDeltaWrite.DeltaWriteTaskCommit) m)
+          .map(m -> (DeltaWriteTaskCommit) m)
           .forEach(
               m -> {
                 removedFragmentIds.addAll(m.removedFragmentIds());

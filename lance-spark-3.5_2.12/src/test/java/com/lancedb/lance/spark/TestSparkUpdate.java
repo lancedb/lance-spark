@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Test for LanceNamespaceSparkCatalog using DirectoryNamespace implementation. */
+/** Test for BaseLanceNamespaceSparkCatalog using DirectoryNamespace implementation. */
 public class TestSparkUpdate extends SparkLanceNamespaceTestBase {
 
   @Override
