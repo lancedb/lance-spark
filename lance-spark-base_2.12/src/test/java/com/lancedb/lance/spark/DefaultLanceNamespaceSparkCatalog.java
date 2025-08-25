@@ -13,23 +13,11 @@
  */
 package com.lancedb.lance.spark;
 
-import com.lancedb.lance.namespace.dir.DirectoryNamespaceConfig;
+import org.apache.spark.sql.types.StructType;
 
-import java.util.HashMap;
-import java.util.Map;
+public class DefaultLanceNamespaceSparkCatalog extends BaseLanceNamespaceSparkCatalog {
 
-/** Test for BaseLanceNamespaceSparkCatalog using DirectoryNamespace implementation. */
-public class TestSparkDirectoryNamespace extends SparkLanceNamespaceTestBase {
-
-  @Override
-  protected String getNsImpl() {
-    return "dir";
-  }
-
-  @Override
-  protected Map<String, String> getAdditionalNsConfigs() {
-    Map<String, String> configs = new HashMap<>();
-    configs.put(DirectoryNamespaceConfig.ROOT, tempDir.toString());
-    return configs;
+  public LanceDataset createDataset(LanceConfig config, StructType sparkSchema) {
+    return new LanceDataset(config, sparkSchema);
   }
 }

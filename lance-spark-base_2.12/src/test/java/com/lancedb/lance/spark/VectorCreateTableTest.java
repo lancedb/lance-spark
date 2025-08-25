@@ -50,7 +50,7 @@ public class VectorCreateTableTest {
             .master("local[*]")
             .config(
                 "spark.sql.catalog." + catalogName,
-                "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+                "com.lancedb.lance.spark.BaseLanceNamespaceSparkCatalog")
             .config("spark.sql.catalog." + catalogName + ".impl", "dir")
             .config(
                 "spark.sql.catalog." + catalogName + "." + DirectoryNamespaceConfig.ROOT,

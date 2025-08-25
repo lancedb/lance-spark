@@ -43,6 +43,22 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
         new MetadataColumn() {
           @Override
           public String name() {
+            return LanceConstant.SEGMENT_ID;
+          }
+
+          @Override
+          public DataType dataType() {
+            return DataTypes.IntegerType;
+          }
+
+          @Override
+          public boolean isNullable() {
+            return false;
+          }
+        },
+        new MetadataColumn() {
+          @Override
+          public String name() {
             return LanceConstant.ROW_ID;
           }
 
@@ -61,11 +77,16 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
           public DataType dataType() {
             return DataTypes.LongType;
           }
+
+          @Override
+          public boolean isNullable() {
+            return false;
+          }
         },
       };
 
   LanceConfig config;
-  private final StructType sparkSchema;
+  protected final StructType sparkSchema;
 
   /**
    * Creates a Lance dataset.
