@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /** Test for BaseLanceNamespaceSparkCatalog using DirectoryNamespace implementation. */
 public class TestSparkUpdate {
@@ -36,8 +35,7 @@ public class TestSparkUpdate {
   protected TableCatalog catalog;
   protected String catalogName = "lance_ns";
 
-  @TempDir
-  protected Path tempDir;
+  @TempDir protected Path tempDir;
 
   @BeforeEach
   void setup() throws IOException {
@@ -102,8 +100,11 @@ public class TestSparkUpdate {
 
     String select = "Select * from " + catalogName + ".default." + tableName + " order by id";
 
-    spark.sql("Update " + catalogName + ".default." + tableName + " set value = value + 1 where id = 2");
+    spark.sql(
+        "Update " + catalogName + ".default." + tableName + " set value = value + 1 where id = 2");
 
-    Assertions.assertEquals("[[1,Alice,100], [2,Bob,201], [3,Charlie,300]]", spark.sql(select).collectAsList().toString());
+    Assertions.assertEquals(
+        "[[1,Alice,100], [2,Bob,201], [3,Charlie,300]]",
+        spark.sql(select).collectAsList().toString());
   }
 }
