@@ -50,7 +50,7 @@ public abstract class SparkLanceNamespaceTestBase {
             .master("local")
             .config(
                 "spark.sql.catalog." + catalogName,
-                "com.lancedb.lance.spark.BaseLanceNamespaceSparkCatalog")
+                "com.lancedb.lance.spark.DefaultLanceNamespaceSparkCatalog")
             .config("spark.sql.catalog." + catalogName + ".impl", getNsImpl())
             .getOrCreate();
 

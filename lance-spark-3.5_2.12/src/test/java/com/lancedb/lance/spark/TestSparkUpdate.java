@@ -15,20 +15,61 @@ package com.lancedb.lance.spark;
 
 import com.lancedb.lance.namespace.dir.DirectoryNamespaceConfig;
 
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.connector.catalog.TableCatalog;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 /** Test for BaseLanceNamespaceSparkCatalog using DirectoryNamespace implementation. */
-public class TestSparkUpdate extends SparkLanceNamespaceTestBase {
+public class TestSparkUpdate {
+  protected SparkSession spark;
+  protected TableCatalog catalog;
+  protected String catalogName = "lance_ns";
 
-  @Override
+  @TempDir
+  protected Path tempDir;
+
+  @BeforeEach
+  void setup() throws IOException {
+    spark =
+        SparkSession.builder()
+            .appName("lance-namespace-test")
+            .master("local")
+            .config(
+                "spark.sql.catalog." + catalogName,
+                "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+            .config("spark.sql.catalog." + catalogName + ".impl", getNsImpl())
+            .getOrCreate();
+
+    Map<String, String> additionalConfigs = getAdditionalNsConfigs();
+    for (Map.Entry<String, String> entry : additionalConfigs.entrySet()) {
+      spark.conf().set("spark.sql.catalog." + catalogName + "." + entry.getKey(), entry.getValue());
+    }
+
+    catalog = (TableCatalog) spark.sessionState().catalogManager().catalog(catalogName);
+  }
+
+  @AfterEach
+  void tearDown() throws IOException {
+    if (spark != null) {
+      spark.stop();
+    }
+  }
+
   protected String getNsImpl() {
     return "dir";
   }
 
-  @Override
   protected Map<String, String> getAdditionalNsConfigs() {
     Map<String, String> configs = new HashMap<>();
     configs.put(DirectoryNamespaceConfig.ROOT, tempDir.toString());
@@ -37,7 +78,8 @@ public class TestSparkUpdate extends SparkLanceNamespaceTestBase {
 
   @Test
   public void testSparkSqlUpdate() throws Exception {
-    String tableName = generateTableName("sql_test_table");
+    String baseName = "sql_test_table";
+    String tableName = baseName + "_" + UUID.randomUUID().toString().replace("-", "");
 
     // Create a table using SQL DDL
     spark.sql(
@@ -45,7 +87,7 @@ public class TestSparkUpdate extends SparkLanceNamespaceTestBase {
             + catalogName
             + ".default."
             + tableName
-            + " (id INT NOT NULL, name STRING, value DOUBLE)");
+            + " (id INT NOT NULL, name STRING, value INT)");
 
     // Create test data and insert using SQL
     spark.sql(
@@ -54,17 +96,14 @@ public class TestSparkUpdate extends SparkLanceNamespaceTestBase {
             + ".default."
             + tableName
             + " VALUES "
-            + "(1, 'Alice', 100.0), "
-            + "(2, 'Bob', 200.0), "
-            + "(3, 'Charlie', 300.0)");
+            + "(1, 'Alice', 100), "
+            + "(2, 'Bob', 200), "
+            + "(3, 'Charlie', 300)");
 
-    String select = "Select * from " + catalogName + ".default." + tableName;
-    System.out.println(spark.sql(select).collectAsList());
+    String select = "Select * from " + catalogName + ".default." + tableName + " order by id";
 
-    spark.sql(
-        "Update " + catalogName + ".default." + tableName + " set value = value + 1 where id = 2");
+    spark.sql("Update " + catalogName + ".default." + tableName + " set value = value + 1 where id = 2");
 
-    System.out.println("===============");
-    System.out.println(spark.sql(select).collectAsList());
+    Assertions.assertEquals("[[1,Alice,100], [2,Bob,201], [3,Charlie,300]]", spark.sql(select).collectAsList().toString());
   }
 }
