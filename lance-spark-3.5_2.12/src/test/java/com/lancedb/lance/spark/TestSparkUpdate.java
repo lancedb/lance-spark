@@ -29,7 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/** Test for BaseLanceNamespaceSparkCatalog using DirectoryNamespace implementation. */
 public class TestSparkUpdate {
   protected SparkSession spark;
   protected TableCatalog catalog;
