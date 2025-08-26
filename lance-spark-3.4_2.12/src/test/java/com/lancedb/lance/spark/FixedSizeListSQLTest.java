@@ -13,5 +13,4 @@
  */
 package com.lancedb.lance.spark;
 
-public class FixedSizeListSQLTest extends BaseFixedSizeListSQLTest {
-}
+public class FixedSizeListSQLTest extends BaseFixedSizeListSQLTest {}

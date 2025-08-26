@@ -13,5 +13,4 @@
  */
 package com.lancedb.lance.spark;
 
-public class VectorCreateTableTest extends BaseVectorCreateTableTest {
-}
+public class VectorCreateTableTest extends BaseVectorCreateTableTest {}

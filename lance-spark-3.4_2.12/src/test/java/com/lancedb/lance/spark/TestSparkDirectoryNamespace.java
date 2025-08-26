@@ -13,5 +13,4 @@
  */
 package com.lancedb.lance.spark;
 
-public class TestSparkDirectoryNamespace extends BaseTestSparkDirectoryNamespace {
-}
+public class TestSparkDirectoryNamespace extends BaseTestSparkDirectoryNamespace {}

@@ -13,5 +13,4 @@
  */
 package com.lancedb.lance.spark;
 
-public class TestSparkGlueNamespace extends BaseTestSparkGlueNamespace {
-}
+public class TestSparkGlueNamespace extends BaseTestSparkGlueNamespace {}

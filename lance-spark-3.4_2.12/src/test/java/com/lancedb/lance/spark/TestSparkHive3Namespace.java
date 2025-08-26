@@ -13,5 +13,4 @@
  */
 package com.lancedb.lance.spark;
 
-public class TestSparkHive3Namespace extends BaseTestSparkHive3Namespace {
-}
+public class TestSparkHive3Namespace extends BaseTestSparkHive3Namespace {}

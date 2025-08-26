@@ -13,5 +13,4 @@
  */
 package com.lancedb.lance.spark;
 
-public class TestSparkLanceDbRestNamespace extends BaseTestSparkLanceDbRestNamespace {
-}
+public class TestSparkLanceDbRestNamespace extends BaseTestSparkLanceDbRestNamespace {}

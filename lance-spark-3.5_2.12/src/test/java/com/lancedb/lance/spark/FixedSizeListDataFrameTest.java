@@ -13,5 +13,4 @@
  */
 package com.lancedb.lance.spark;
 
-public class FixedSizeListDataFrameTest extends BaseFixedSizeListDataFrameTest {
-}
+public class FixedSizeListDataFrameTest extends BaseFixedSizeListDataFrameTest {}
