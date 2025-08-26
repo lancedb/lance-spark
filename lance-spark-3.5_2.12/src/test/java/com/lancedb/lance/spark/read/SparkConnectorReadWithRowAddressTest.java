@@ -13,5 +13,5 @@
  */
 package com.lancedb.lance.spark.read;
 
-public class SparkConnectorReadWithRowAddressTest extends BaseSparkConnectorReadWithRowAddressTest {
-}
+public class SparkConnectorReadWithRowAddressTest
+    extends BaseSparkConnectorReadWithRowAddressTest {}

@@ -13,5 +13,4 @@
  */
 package com.lancedb.lance.spark.read;
 
-public class SparkConnectorLineItemTest extends BaseSparkConnectorLineItemTest {
-}
+public class SparkConnectorLineItemTest extends BaseSparkConnectorLineItemTest {}

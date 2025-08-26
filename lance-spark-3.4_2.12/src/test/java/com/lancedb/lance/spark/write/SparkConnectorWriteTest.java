@@ -13,5 +13,4 @@
  */
 package com.lancedb.lance.spark.write;
 
-public class SparkConnectorWriteTest extends BaseSparkConnectorWriteTest {
-}
+public class SparkConnectorWriteTest extends BaseSparkConnectorWriteTest {}
