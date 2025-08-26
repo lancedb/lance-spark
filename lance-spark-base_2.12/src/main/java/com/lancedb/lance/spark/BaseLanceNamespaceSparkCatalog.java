@@ -64,9 +64,10 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-public class LanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespaces {
+public abstract class BaseLanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespaces {
 
-  private static final Logger logger = LoggerFactory.getLogger(LanceNamespaceSparkCatalog.class);
+  private static final Logger logger =
+      LoggerFactory.getLogger(BaseLanceNamespaceSparkCatalog.class);
 
   /** Used to specify the namespace implementation to use */
   private static final String CONFIG_IMPL = "impl";
@@ -383,7 +384,7 @@ public class LanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespa
       throw new NoSuchTableException(ident);
     }
 
-    return new LanceDataset(config, schema.get());
+    return createDataset(config, schema.get());
   }
 
   @Override
@@ -419,7 +420,7 @@ public class LanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespa
     }
 
     LanceConfig config = LanceConfig.from(storageOptions, response.getLocation());
-    return new LanceDataset(config, processedSchema);
+    return createDataset(config, processedSchema);
   }
 
   @Override
@@ -591,4 +592,6 @@ public class LanceNamespaceSparkCatalog implements TableCatalog, SupportsNamespa
 
     return namespace;
   }
+
+  public abstract LanceDataset createDataset(LanceConfig config, StructType sparkSchema);
 }

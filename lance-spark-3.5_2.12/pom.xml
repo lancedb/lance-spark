@@ -47,11 +47,6 @@
     <build>
         <sourceDirectory>../lance-spark-base_2.12/src/main/scala</sourceDirectory>
         <testSourceDirectory>../lance-spark-base_2.12/src/test/scala</testSourceDirectory>
-        <resources>
-            <resource>
-                <directory>../lance-spark-base_2.12/src/main/resources</directory>
-            </resource>
-        </resources>
         <testResources>
             <testResource>
                 <directory>../lance-spark-base_2.12/src/test/resources</directory>
@@ -72,6 +67,7 @@
                         <configuration>
                             <sources>
                                 <source>../lance-spark-base_2.12/src/main/java</source>
+                                <source>src/main/java</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -84,6 +80,7 @@
                         <configuration>
                             <sources>
                                 <source>../lance-spark-base_2.12/src/test/java</source>
+                                <source>src/test/java</source>
                             </sources>
                         </configuration>
                     </execution>

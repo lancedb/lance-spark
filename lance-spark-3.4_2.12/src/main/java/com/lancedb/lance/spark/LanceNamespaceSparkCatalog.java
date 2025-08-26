@@ -13,28 +13,11 @@
  */
 package com.lancedb.lance.spark;
 
-import org.junit.jupiter.api.Disabled;
+import org.apache.spark.sql.types.StructType;
 
-import java.util.HashMap;
-import java.util.Map;
+public class LanceNamespaceSparkCatalog extends BaseLanceNamespaceSparkCatalog {
 
-@Disabled("Requires AWS credentials setup, Glue catalog must have the default database created")
-public class TestSparkGlueNamespace extends SparkLanceNamespaceTestBase {
-
-  @Override
-  protected String getNsImpl() {
-    return "glue";
-  }
-
-  @Override
-  protected Map<String, String> getAdditionalNsConfigs() {
-    Map<String, String> configs = new HashMap<>();
-    configs.put("root", tempDir.toString() + "/lance");
-    return configs;
-  }
-
-  @Override
-  protected boolean supportsNamespace() {
-    return true;
+  public LanceDataset createDataset(LanceConfig config, StructType sparkSchema) {
+    return new LanceDataset(config, sparkSchema);
   }
 }

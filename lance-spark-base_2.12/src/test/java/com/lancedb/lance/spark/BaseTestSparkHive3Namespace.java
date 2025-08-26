@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TestSparkHive3Namespace extends SparkLanceNamespaceTestBase {
+public abstract class BaseTestSparkHive3Namespace extends SparkLanceNamespaceTestBase {
 
   private LocalHive3Metastore metastore;
 

@@ -24,8 +24,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-public class TestSparkLanceDbRestNamespace extends SparkLanceNamespaceTestBase {
-  private static final Logger log = LoggerFactory.getLogger(TestSparkLanceDbRestNamespace.class);
+public abstract class BaseTestSparkLanceDbRestNamespace extends SparkLanceNamespaceTestBase {
+  private static final Logger log = LoggerFactory.getLogger(BaseTestSparkLanceDbRestNamespace.class);
 
   protected static String DATABASE;
   protected static String API_KEY;

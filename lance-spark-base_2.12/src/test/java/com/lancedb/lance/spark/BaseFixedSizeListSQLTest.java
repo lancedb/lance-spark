@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Test for FixedSizeList support using SQL API. Tests creating Lance tables with vector columns via
  * SQL CREATE TABLE and INSERT statements.
  */
-public class FixedSizeListSQLTest {
+public abstract class BaseFixedSizeListSQLTest {
 
   @TempDir Path tempDir;
 

@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Test for FixedSizeList support using DataFrame API. Tests creating Lance tables with vector
  * columns via DataFrame write operations and validates both write and read paths.
  */
-public class FixedSizeListDataFrameTest {
+public abstract class BaseFixedSizeListDataFrameTest {
 
   @TempDir Path tempDir;
 

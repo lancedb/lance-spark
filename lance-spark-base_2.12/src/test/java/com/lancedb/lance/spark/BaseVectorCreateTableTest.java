@@ -36,7 +36,7 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class VectorCreateTableTest {
+public abstract class BaseVectorCreateTableTest {
   private SparkSession spark;
   private static final String catalogName = "lance_ns";
 
