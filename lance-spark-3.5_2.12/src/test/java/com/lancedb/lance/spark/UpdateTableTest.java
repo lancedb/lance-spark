@@ -29,7 +29,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-public class TestSparkUpdate {
+public class UpdateTableTest {
   protected SparkSession spark;
   protected TableCatalog catalog;
   protected String catalogName = "lance_ns";
