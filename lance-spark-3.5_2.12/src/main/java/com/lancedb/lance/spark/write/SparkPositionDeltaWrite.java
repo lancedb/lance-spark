@@ -170,12 +170,14 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
 
     @Override
     public WriterCommitMessage commit() throws IOException {
+      // Write new fragments to store new updated rows.
       LanceBatchWrite.TaskCommit append = (LanceBatchWrite.TaskCommit) writer.commit();
       List<FragmentMetadata> newFragments = append.getFragments();
 
       List<Long> removedFragmentIds = new ArrayList<>();
       List<FragmentMetadata> updatedFragments = new ArrayList<>();
 
+      // Deleting updated rows from old fragments.
       this.deletedAddrs.forEach(
           (fragmentId, addrs) -> {
             FragmentMetadata updatedFragment =
