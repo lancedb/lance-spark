@@ -26,7 +26,7 @@
         <dependency>
             <groupId>com.lancedb</groupId>
             <artifactId>lance-namespace-glue</artifactId>
-            <version>0.0.7</version>
+            <version>${lance-namespace.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

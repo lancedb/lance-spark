@@ -42,6 +42,12 @@
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.lancedb</groupId>
+            <artifactId>lance-namespace-glue</artifactId>
+            <version>${lance-namespace.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -49,7 +55,7 @@
         <testSourceDirectory>../lance-spark-base_2.12/src/test/scala</testSourceDirectory>
         <resources>
             <resource>
-                <directory>../lance-spark-base_2.12/src/main/resources</directory>
+                <directory>../lance-spark-3.4_2.12/src/main/resources</directory>
             </resource>
         </resources>
         <testResources>
@@ -72,6 +78,7 @@
                         <configuration>
                             <sources>
                                 <source>../lance-spark-base_2.12/src/main/java</source>
+                                <source>../lance-spark-3.4_2.12/src/main/java</source>
                             </sources>
                         </configuration>
                     </execution>
