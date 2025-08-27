@@ -135,25 +135,25 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
     private final LanceConfig config;
     private final LanceDataWriter writer;
 
-    // Key is fragmentId, Value is fragment's deleted addresses
-    private final Map<Integer, List<Long>> deletedAddrs;
+    // Key is fragmentId, Value is fragment's deleted row indexes
+    private final Map<Integer, List<Integer>> deletedRows;
 
     private LanceDeltaWriter(LanceConfig config, LanceDataWriter writer) {
       this.config = config;
       this.writer = writer;
-      this.deletedAddrs = new HashMap<>();
+      this.deletedRows = new HashMap<>();
     }
 
     @Override
     public void delete(InternalRow metadata, InternalRow id) throws IOException {
       int fragmentId = metadata.getInt(0);
-      deletedAddrs.compute(
+      deletedRows.compute(
           fragmentId,
           (k, v) -> {
             if (v == null) {
               v = new ArrayList<>();
             }
-            v.add(id.getLong(0));
+            v.add((int) (id.getLong(0) & 0xFFFFFFFFL));
             return v;
           });
     }
@@ -178,10 +178,10 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
       List<FragmentMetadata> updatedFragments = new ArrayList<>();
 
       // Deleting updated rows from old fragments.
-      this.deletedAddrs.forEach(
-          (fragmentId, addrs) -> {
+      this.deletedRows.forEach(
+          (fragmentId, rowIndexes) -> {
             FragmentMetadata updatedFragment =
-                LanceDatasetAdapter.deleteByAddrs(config, fragmentId, addrs);
+                LanceDatasetAdapter.deleteRows(config, fragmentId, rowIndexes);
             if (updatedFragment != null) {
               updatedFragments.add(updatedFragment);
             } else {

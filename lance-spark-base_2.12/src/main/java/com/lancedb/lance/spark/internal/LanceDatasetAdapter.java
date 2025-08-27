@@ -144,12 +144,12 @@ public class LanceDatasetAdapter {
     }
   }
 
-  public static FragmentMetadata deleteByAddrs(
-      LanceConfig config, int fragmentId, List<Long> addrs) {
+  public static FragmentMetadata deleteRows(
+      LanceConfig config, int fragmentId, List<Integer> rowIndexes) {
     String uri = config.getDatasetUri();
     ReadOptions options = SparkOptions.genReadOptionFromConfig(config);
     try (Dataset dataset = Dataset.open(allocator, uri, options)) {
-      return dataset.getFragment(fragmentId).deleteByAddrs(addrs);
+      return dataset.getFragment(fragmentId).deleteRows(rowIndexes);
     }
   }
 
