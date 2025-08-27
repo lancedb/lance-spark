@@ -42,6 +42,12 @@
             <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.lancedb</groupId>
+            <artifactId>lance-namespace-glue</artifactId>
+            <version>${lance-namespace.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
