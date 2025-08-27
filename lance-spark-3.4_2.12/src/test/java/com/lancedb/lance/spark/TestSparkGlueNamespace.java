@@ -13,4 +13,7 @@
  */
 package com.lancedb.lance.spark;
 
+import org.junit.jupiter.api.Disabled;
+
+@Disabled("Requires AWS credentials setup, Glue catalog must have the default database created")
 public class TestSparkGlueNamespace extends BaseTestSparkGlueNamespace {}
