@@ -1,5 +1,7 @@
 # Contributing to Spark Lance Connector
 
+The Spark Lance connector codebase is at [lancedb/lance-spark](https://github.com/lancedb/lance-spark).
+
 ## Build Commands
 
 This connector is built using Maven. You can run the following make commands:
@@ -48,8 +50,10 @@ make serve-docs
 
 ### Understanding the Build Process
 
-The contents in the `lance-spark` repo are for the ease of contributors to edit and preview.
+The contents in `lance-spark/docs` are for the ease of contributors to edit and preview.
 After code merge, the contents are added to the 
 [main Lance documentation](https://github.com/lancedb/lance/tree/main/docs) 
 during the Lance doc CI build time, and is presented in the Lance website under 
 [Apache Spark integration](https://lancedb.github.io/lance/integrations/spark).
+
+The CONTRIBUTING.md document is auto-built to the [Lance Contributing Guide](https://lancedb.github.io/lance/community/contributing/) 
