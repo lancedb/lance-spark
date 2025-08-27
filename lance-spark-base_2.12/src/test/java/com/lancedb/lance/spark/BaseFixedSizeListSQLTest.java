@@ -45,7 +45,7 @@ public abstract class BaseFixedSizeListSQLTest {
             .master("local[*]")
             .config(
                 "spark.sql.catalog." + catalogName,
-                "com.lancedb.lance.spark.BaseLanceNamespaceSparkCatalog")
+                "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
             .config("spark.sql.catalog." + catalogName + ".impl", "dir")
             .config("spark.sql.catalog." + catalogName + ".root", tempDir.toString())
             .getOrCreate();
@@ -130,7 +130,7 @@ public abstract class BaseFixedSizeListSQLTest {
             .master("local[*]")
             .config(
                 "spark.sql.catalog." + catalogName,
-                "com.lancedb.lance.spark.BaseLanceNamespaceSparkCatalog")
+                "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
             .config("spark.sql.catalog." + catalogName + ".impl", "dir")
             .config("spark.sql.catalog." + catalogName + ".root", tempDir.toString())
             .getOrCreate();
@@ -215,7 +215,7 @@ public abstract class BaseFixedSizeListSQLTest {
             .master("local[*]")
             .config(
                 "spark.sql.catalog." + catalogName,
-                "com.lancedb.lance.spark.BaseLanceNamespaceSparkCatalog")
+                "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
             .config("spark.sql.catalog." + catalogName + ".impl", "dir")
             .config("spark.sql.catalog." + catalogName + ".root", tempDir.toString())
             .getOrCreate();
