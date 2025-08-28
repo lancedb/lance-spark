@@ -13,11 +13,19 @@
  */
 package com.lancedb.lance.spark;
 
+import org.apache.spark.sql.connector.catalog.SupportsRowLevelOperations;
+import org.apache.spark.sql.connector.write.RowLevelOperationBuilder;
+import org.apache.spark.sql.connector.write.RowLevelOperationInfo;
 import org.apache.spark.sql.types.StructType;
 
-public class LanceSparkDataSource extends LanceDataSource {
+public class LancePositionDeltaDataset extends LanceDataset implements SupportsRowLevelOperations {
+  public LancePositionDeltaDataset(LanceConfig config, StructType sparkSchema) {
+    super(config, sparkSchema);
+  }
+
   @Override
-  public LanceDataset createDataset(LanceConfig config, StructType sparkSchema) {
-    return new LancePositionDeltaDataset(config, sparkSchema);
+  public RowLevelOperationBuilder newRowLevelOperationBuilder(
+      RowLevelOperationInfo rowLevelOperationInfo) {
+    return new LanceRowLevelOperationBuilder(rowLevelOperationInfo.command(), sparkSchema, config);
   }
 }

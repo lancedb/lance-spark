@@ -17,10 +17,15 @@ import com.lancedb.lance.spark.read.LanceInputPartition;
 
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowReader;
+import org.apache.spark.sql.execution.vectorized.ConstantColumnVector;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.vectorized.ColumnVector;
 import org.apache.spark.sql.vectorized.ColumnarBatch;
 import org.apache.spark.sql.vectorized.LanceArrowColumnVector;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class LanceFragmentColumnarBatchScanner implements AutoCloseable {
   private final LanceFragmentScanner fragmentScanner;
@@ -43,12 +48,20 @@ public class LanceFragmentColumnarBatchScanner implements AutoCloseable {
   public boolean loadNextBatch() throws IOException {
     if (arrowReader.loadNextBatch()) {
       VectorSchemaRoot root = arrowReader.getVectorSchemaRoot();
+
+      List<ColumnVector> fieldVectors =
+          root.getFieldVectors().stream()
+              .map(LanceArrowColumnVector::new)
+              .collect(Collectors.toList());
+      if (fragmentScanner.withFragemtId()) {
+        ConstantColumnVector fragmentVector =
+            new ConstantColumnVector(root.getRowCount(), DataTypes.IntegerType);
+        fragmentVector.setInt(fragmentScanner.fragmentId());
+        fieldVectors.add(fragmentVector);
+      }
+
       currentColumnarBatch =
-          new ColumnarBatch(
-              root.getFieldVectors().stream()
-                  .map(LanceArrowColumnVector::new)
-                  .toArray(LanceArrowColumnVector[]::new),
-              root.getRowCount());
+          new ColumnarBatch(fieldVectors.toArray(new ColumnVector[] {}), root.getRowCount());
       return true;
     }
     return false;
