@@ -13,17 +13,17 @@
  */
 package com.lancedb.lance.spark;
 
+import com.lancedb.lance.WriteParams;
 import com.lancedb.lance.namespace.LanceNamespace;
 import com.lancedb.lance.namespace.LanceNamespaceException;
 import com.lancedb.lance.namespace.LanceNamespaces;
 import com.lancedb.lance.namespace.ListTablesIterable;
-import com.lancedb.lance.namespace.model.CreateTableRequest;
-import com.lancedb.lance.namespace.model.CreateTableResponse;
+import com.lancedb.lance.namespace.model.CreateEmptyTableRequest;
+import com.lancedb.lance.namespace.model.CreateEmptyTableResponse;
 import com.lancedb.lance.namespace.model.DescribeTableRequest;
 import com.lancedb.lance.namespace.model.DescribeTableResponse;
 import com.lancedb.lance.namespace.model.DropNamespaceRequest;
 import com.lancedb.lance.namespace.model.DropTableRequest;
-import com.lancedb.lance.namespace.model.JsonArrowSchema;
 import com.lancedb.lance.namespace.model.ListTablesRequest;
 import com.lancedb.lance.namespace.util.JsonArrowSchemaConverter;
 import com.lancedb.lance.namespace.util.PropertyUtil;
@@ -392,7 +392,7 @@ public abstract class BaseLanceNamespaceSparkCatalog implements TableCatalog, Su
       Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
       throws TableAlreadyExistsException, NoSuchNamespaceException {
     Identifier tableId = transformIdentifierForApi(ident);
-    CreateTableRequest createRequest = new CreateTableRequest();
+    CreateEmptyTableRequest createRequest = new CreateEmptyTableRequest();
     for (String part : tableId.namespace()) {
       createRequest.addIdItem(part);
     }
@@ -406,12 +406,11 @@ public abstract class BaseLanceNamespaceSparkCatalog implements TableCatalog, Su
       createRequest.setProperties(properties);
     }
 
-    // Process schema with table properties to add metadata for vector columns
+    CreateEmptyTableResponse response = namespace.createEmptyTable(createRequest);
+    WriteParams.Builder writeParams = new WriteParams.Builder();
+    writeParams.withStorageOptions(response.getStorageOptions());
     StructType processedSchema = SchemaConverter.processSchemaWithProperties(schema, properties);
-    JsonArrowSchema jsonSchema = SchemaConverter.toJsonArrowSchema(processedSchema);
-    createRequest.setSchema(jsonSchema);
-    byte[] emptyArrowData = createEmptyArrowIpcStream(jsonSchema);
-    CreateTableResponse response = namespace.createTable(createRequest, emptyArrowData);
+    LanceDatasetAdapter.createDataset(response.getLocation(), processedSchema, writeParams.build());
 
     // Pass storage options from the response to LanceConfig, with fallback to empty map
     Map<String, String> storageOptions = response.getStorageOptions();

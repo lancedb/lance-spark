@@ -32,7 +32,7 @@ If you want to also include the bundled jar in your own bundle, remove the provi
     <dependency>
         <groupId>com.lancedb</groupId>
         <artifactId>lance-spark-bundle-3.5_2.12</artifactId>
-        <version>0.0.6</version>
+        <version>0.0.7</version>
         <scope>provided</scope>
     </dependency>
     ```
@@ -41,7 +41,7 @@ If you want to also include the bundled jar in your own bundle, remove the provi
     ```gradle   
     dependencies {
         // For Spark 3.5 (Scala 2.12)
-        compileOnly 'com.lancedb:lance-spark-bundle-3.5_2.12:0.0.6'
+        compileOnly 'com.lancedb:lance-spark-bundle-3.5_2.12:0.0.7'
     }
     ```
 
@@ -49,7 +49,7 @@ If you want to also include the bundled jar in your own bundle, remove the provi
     ```scala
     libraryDependencies ++= Seq(
       // For Spark 3.5 (Scala 2.12)
-      "com.lancedb" %% "lance-spark-bundle-3.5_2.12" % "0.0.6" % "provided"
+      "com.lancedb" %% "lance-spark-bundle-3.5_2.12" % "0.0.7" % "provided"
     )
     ```
 
