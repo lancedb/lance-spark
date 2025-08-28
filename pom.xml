@@ -168,7 +168,7 @@
         <dependency>
             <groupId>com.lancedb</groupId>
             <artifactId>lance-namespace-hive3</artifactId>
-            <version>0.0.7</version>
+            <version>${lance-namespace.version}</version>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -200,7 +200,7 @@
         <dependency>
             <groupId>com.lancedb</groupId>
             <artifactId>lance-namespace-hive3</artifactId>
-            <version>0.0.7</version>
+            <version>${lance-namespace.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
             <exclusions>
