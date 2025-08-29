@@ -53,7 +53,7 @@ jobs:
     
     - name: Install dependencies
       run: |
-        pip install packaging lxml
+        pip install packaging lxml bump-my-version
     
     - name: Get current version
       id: current_version

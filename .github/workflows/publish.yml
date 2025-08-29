@@ -36,7 +36,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref }}
+          # When triggered by a release, use the release tag
+          # When triggered manually, use the provided ref
+          ref: ${{ github.event.release.tag_name || inputs.ref }}
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -70,3 +72,88 @@ jobs:
         env:
           SONATYPE_USER: ${{ secrets.SONATYPE_USER }}
           SONATYPE_TOKEN: ${{ secrets.SONATYPE_TOKEN }}
+      
+      - name: Get published version
+        if: |
+          github.event_name == 'release' ||
+          inputs.mode == 'release'
+        id: get_version
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Published version: $VERSION"
+      
+      - name: Wait for Maven Central availability
+        if: |
+          github.event_name == 'release' ||
+          inputs.mode == 'release'
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          GROUP_ID="com.lancedb"
+          
+          # List of artifacts to check (a representative subset)
+          ARTIFACTS=(
+            "lance-spark-base_2.12"
+            "lance-spark-3.5_2.12"
+            "lance-spark-bundle-3.5_2.12"
+          )
+          
+          echo "Waiting for version $VERSION to be available in Maven Central..."
+          echo "This typically takes 10-30 minutes after publishing to OSSRH."
+          
+          # Maximum wait time: 60 minutes
+          MAX_WAIT=3600
+          INTERVAL=60
+          ELAPSED=0
+          
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            ALL_AVAILABLE=true
+            
+            for ARTIFACT_ID in "${ARTIFACTS[@]}"; do
+              URL="https://repo1.maven.org/maven2/com/lancedb/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${VERSION}.pom"
+              
+              if curl --head --silent --fail "$URL" > /dev/null 2>&1; then
+                echo "✓ ${ARTIFACT_ID} is available"
+              else
+                echo "✗ ${ARTIFACT_ID} is not yet available"
+                ALL_AVAILABLE=false
+              fi
+            done
+            
+            if [ "$ALL_AVAILABLE" = true ]; then
+              echo ""
+              echo "🎉 All artifacts are now available in Maven Central!"
+              echo ""
+              echo "Users can now add the following dependency to their projects:"
+              echo ""
+              echo "Maven:"
+              echo "<dependency>"
+              echo "  <groupId>com.lancedb</groupId>"
+              echo "  <artifactId>lance-spark-bundle-3.5_2.12</artifactId>"
+              echo "  <version>${VERSION}</version>"
+              echo "</dependency>"
+              echo ""
+              echo "Gradle:"
+              echo "implementation 'com.lancedb:lance-spark-bundle-3.5_2.12:${VERSION}'"
+              echo ""
+              echo "SBT:"
+              echo "libraryDependencies += \"com.lancedb\" % \"lance-spark-bundle-3.5_2.12\" % \"${VERSION}\""
+              exit 0
+            fi
+            
+            ELAPSED=$((ELAPSED + INTERVAL))
+            
+            if [ $ELAPSED -lt $MAX_WAIT ]; then
+              echo ""
+              echo "Artifacts not yet available. Waiting ${INTERVAL} seconds... (${ELAPSED}s elapsed)"
+              sleep $INTERVAL
+            fi
+          done
+          
+          echo ""
+          echo "⚠️ WARNING: Artifacts are not yet available in Maven Central after ${MAX_WAIT} seconds."
+          echo "This is normal - Maven Central sync can take up to 2 hours."
+          echo "The artifacts will appear at: https://central.sonatype.com/artifact/com.lancedb/lance-spark-bundle-3.5_2.12/${VERSION}"
+          echo ""
+          echo "You can check the sync status at: https://s01.oss.sonatype.org/"
+          exit 0
