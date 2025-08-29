@@ -1,13 +1,10 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version='1.0' encoding='UTF-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.lancedb</groupId>
     <artifactId>lance-spark-root</artifactId>
-    <version>0.0.7</version>
+    <version>0.0.8</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
@@ -53,7 +50,7 @@
     </distributionManagement>
 
     <properties>
-        <lance-spark.version>0.0.7</lance-spark.version>
+        <lance-spark.version>0.0.8</lance-spark.version>
         <lance.version>0.26.1</lance.version>
         <lance-namespace.version>0.0.9</lance-namespace.version>
 
@@ -78,7 +75,7 @@
         <spotless.skip>false</spotless.skip>
         <spotless.version>2.30.0</spotless.version>
         <spotless.java.googlejavaformat.version>1.7</spotless.java.googlejavaformat.version>
-        <!-- Please also update .scalafmt.conf when you change it here -->
+        
         <spotless.scala.scalafmt.version>3.7.5</spotless.scala.scalafmt.version>
         <spotless.delimiter>package</spotless.delimiter>
         <spotless.license.header>
@@ -132,7 +129,7 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- Each version module should explicitly overwrite the Spark related dependency versions -->
+            
             <dependency>
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-sql_${scala.compat.version}</artifactId>
@@ -456,7 +453,7 @@
                 <jdk>[11,)</jdk>
             </activation>
             <properties>
-                <!-- Ping release target to JDK8 to link only against Java 8 APIs -->
+                
                 <maven.compiler.release>8</maven.compiler.release>
             </properties>
             <build>
@@ -485,8 +482,7 @@
                                 -Djdk.reflect.useDirectMethodHandle=false
                                 -Dio.netty.tryReflectionSetAccessible=true
                             </argLine>
-                            <forkNode
-                                    implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
+                            <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
                             <useSystemClassLoader>false</useSystemClassLoader>
                         </configuration>
                     </plugin>
