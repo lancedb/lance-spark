@@ -1,17 +1,15 @@
 name: Auto Bump Version
 
 on:
-  schedule:
-    # Run daily at 2 AM UTC
-    - cron: '0 2 * * *'
   workflow_dispatch:
     inputs:
       bump_type:
         description: 'Type of version bump'
-        required: true
-        default: 'patch'
+        required: false
+        default: 'auto'
         type: choice
         options:
+          - auto
           - patch
           - minor
           - major
@@ -48,20 +46,21 @@ jobs:
         if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
           echo "Found $COMMITS_SINCE_TAG commits since last tag $LAST_TAG"
           
-          # Analyze commit messages to determine bump type
-          BUMP_TYPE="patch"
-          
-          # Check for breaking changes (major bump)
-          if git log ${LAST_TAG}..HEAD --grep="BREAKING CHANGE" --grep="!:" | grep -q .; then
-            BUMP_TYPE="major"
-          # Check for features (minor bump)
-          elif git log ${LAST_TAG}..HEAD --grep="^feat" --grep="^feature" | grep -q .; then
-            BUMP_TYPE="minor"
-          fi
-          
-          # Override with manual input if provided
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ inputs.bump_type }}" ]; then
+          # Determine bump type based on input or commit analysis
+          if [ "${{ inputs.bump_type }}" != "auto" ] && [ -n "${{ inputs.bump_type }}" ]; then
+            # Use manual input if provided and not "auto"
             BUMP_TYPE="${{ inputs.bump_type }}"
+          else
+            # Analyze commit messages to determine bump type
+            BUMP_TYPE="patch"
+            
+            # Check for breaking changes (major bump)
+            if git log ${LAST_TAG}..HEAD --grep="BREAKING CHANGE" --grep="!:" | grep -q .; then
+              BUMP_TYPE="major"
+            # Check for features (minor bump)
+            elif git log ${LAST_TAG}..HEAD --grep="^feat" --grep="^feature" | grep -q .; then
+              BUMP_TYPE="minor"
+            fi
           fi
           
           echo "should_bump=true" >> $GITHUB_OUTPUT
@@ -164,7 +163,7 @@ jobs:
           
           ### Details
           - **Bump Type:** ${{ needs.check-for-changes.outputs.bump_type }}
-          - **Triggered By:** ${{ github.event_name == 'schedule' && 'Scheduled run' || 'Manual trigger' }}
+          - **Triggered By:** Manual trigger
           
           ### Checklist
           - [ ] Review version bump changes

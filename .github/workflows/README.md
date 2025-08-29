@@ -6,15 +6,17 @@ This directory contains GitHub Actions workflows for automated version managemen
 
 ### 1. Auto Bump Version (`auto-bump.yml`)
 
-**Purpose:** Automatically creates PR to bump version when changes are detected.
+**Purpose:** Creates PR to bump version when changes are detected.
 
 **Triggers:**
-- Daily at 2 AM UTC (scheduled)
 - Manual trigger via GitHub Actions UI
 
 **Features:**
 - Detects unreleased changes since last tag
-- Analyzes commit messages to determine bump type:
+- Supports automatic or manual bump type selection:
+  - `auto`: Analyzes commit messages to determine bump type
+  - `patch`, `minor`, `major`: Manual override
+- Automatic detection rules:
   - `BREAKING CHANGE` or `!:` → major bump
   - `feat:` or `feature:` → minor bump
   - Other changes → patch bump
@@ -37,32 +39,31 @@ This directory contains GitHub Actions workflows for automated version managemen
 - Updates version in all pom.xml files (stable releases)
 - Creates git tag (semantic versioning)
 - Generates release notes automatically
-- Triggers Maven publish for stable releases
 - Supports preview/beta releases
+- Publishing to Maven Central is triggered automatically when a stable release is published (not draft)
 
-### 3. Maven Publish (`maven-publish.yml`)
+### 3. Publish Spark Packages (`publish.yml`)
 
 **Purpose:** Publishes artifacts to Maven Central.
 
 **Triggers:**
-- Called by release workflow
-- Manual trigger for re-publishing
+- Automatically when a GitHub release is published (not draft)
+- Manual trigger via workflow dispatch
+- Pull request changes to the workflow file (dry run)
 
 **Features:**
-- Builds and publishes for all Spark/Scala combinations:
-  - Spark 3.4 with Scala 2.12/2.13
-  - Spark 3.5 with Scala 2.12/2.13
-  - Spark 4.0 with Scala 2.13
+- Builds and publishes all modules to Maven Central
 - Signs artifacts with GPG
-- Publishes both regular and bundle artifacts
+- Supports dry run mode for testing
+- Uses Sonatype OSSRH for distribution
 
 ## Required Secrets
 
 Configure these secrets in your GitHub repository settings:
 
 - `GITHUB_TOKEN`: Automatically provided by GitHub Actions
-- `OSSRH_USERNAME`: Sonatype OSSRH username
-- `OSSRH_TOKEN`: Sonatype OSSRH token
+- `SONATYPE_USER`: Sonatype OSSRH username
+- `SONATYPE_TOKEN`: Sonatype OSSRH token
 - `GPG_PRIVATE_KEY`: GPG private key for signing artifacts
 - `GPG_PASSPHRASE`: Passphrase for GPG key
 
@@ -70,10 +71,10 @@ Configure these secrets in your GitHub repository settings:
 
 ### Creating a Release
 
-1. **Automated Version Bump (Recommended)**
-   - Wait for daily auto-bump workflow or trigger manually
+1. **Version Bump (Optional but Recommended)**
+   - Go to Actions → "Auto Bump Version"
+   - Select bump type or use "auto" for automatic detection
    - Review and merge the created PR
-   - Proceed to step 2
 
 2. **Create Release**
    - Go to Actions → "Create Release"
@@ -85,8 +86,9 @@ Configure these secrets in your GitHub repository settings:
    - Run workflow
 
 3. **Publishing**
-   - For stable releases, Maven publish is triggered automatically
-   - For preview releases, artifacts are not published to Maven Central
+   - For stable releases: Maven Central publishing is triggered automatically when the release is published (not draft)
+   - For draft releases: Edit and publish the release on GitHub to trigger publishing
+   - For preview releases: Not published to Maven Central
 
 ### Manual Version Bump
 
@@ -120,12 +122,17 @@ For automatic bump type detection:
 ### Release workflow fails
 - Check that all required secrets are configured
 - Verify GPG key is valid and not expired
-- Ensure OSSRH credentials are correct
+- Ensure Sonatype credentials are correct
 
 ### Auto-bump doesn't create PR
 - Check if there are commits since last tag
 - Verify GitHub Actions has write permissions
 - Check workflow logs for errors
+
+### Publish workflow doesn't trigger
+- Ensure the release is published (not draft)
+- Check that it's a stable release (not preview/beta)
+- Verify the publish.yml workflow is enabled
 
 ### Maven publish fails
 - Verify artifacts build successfully locally

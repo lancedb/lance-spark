@@ -34,9 +34,6 @@ on:
 jobs:
   create-release:
     runs-on: ubuntu-latest
-    outputs:
-      new_version: ${{ steps.new_version.outputs.version }}
-      tag_name: ${{ steps.tag_name.outputs.tag }}
     steps:
     - name: Output Inputs
       run: echo "${{ toJSON(github.event.inputs) }}"
@@ -168,13 +165,13 @@ jobs:
         if [ "${{ inputs.dry_run }}" == "true" ]; then
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "⚠️ This was a dry run. No changes were pushed." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.release_channel }}" == "stable" ] && [ "${{ inputs.draft_release }}" == "false" ]; then
+            echo "✅ Release created! The publish workflow will be triggered automatically when the release is published." >> $GITHUB_STEP_SUMMARY
+          elif [ "${{ inputs.draft_release }}" == "true" ]; then
+            echo "📝 Draft release created! Edit and publish it to trigger the Maven Central deployment." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "🚀 Preview release created! Preview releases are not published to Maven Central." >> $GITHUB_STEP_SUMMARY
+          fi
         fi
-
-  trigger-publish:
-    needs: create-release
-    if: ${{ !inputs.dry_run && inputs.release_channel == 'stable' }}
-    uses: ./.github/workflows/maven-publish.yml
-    with:
-      version: ${{ needs.create-release.outputs.new_version }}
-      tag: ${{ needs.create-release.outputs.tag_name }}
-    secrets: inherit
