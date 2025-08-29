@@ -1,0 +1,183 @@
+name: Publish to Maven Central
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to publish'
+        required: true
+        type: string
+      tag:
+        description: 'Git tag for the release'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish'
+        required: true
+        type: string
+      tag:
+        description: 'Git tag for the release'
+        required: true
+        type: string
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - spark: "3.4"
+            scala: "2.12"
+          - spark: "3.4"
+            scala: "2.13"
+          - spark: "3.5"
+            scala: "2.12"
+          - spark: "3.5"
+            scala: "2.13"
+          - spark: "4.0"
+            scala: "2.13"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.tag }}
+    
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+        server-id: ossrh
+        server-username: MAVEN_USERNAME
+        server-password: MAVEN_PASSWORD
+        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+        gpg-passphrase: MAVEN_GPG_PASSPHRASE
+    
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-
+    
+    - name: Build and publish artifacts
+      env:
+        MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+        MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      run: |
+        # Configure GPG
+        echo "use-agent" >> ~/.gnupg/gpg.conf
+        echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+        export GPG_TTY=$(tty)
+        
+        # Build and deploy the specific Spark/Scala combination
+        PROFILES=""
+        if [ "${{ matrix.spark }}" == "3.4" ]; then
+          PROFILES="-Pspark34"
+        elif [ "${{ matrix.spark }}" == "3.5" ]; then
+          PROFILES="-Pspark35"
+        elif [ "${{ matrix.spark }}" == "4.0" ]; then
+          PROFILES="-Pspark40"
+        fi
+        
+        if [ "${{ matrix.scala }}" == "2.12" ]; then
+          PROFILES="$PROFILES -Pscala212"
+        elif [ "${{ matrix.scala }}" == "2.13" ]; then
+          PROFILES="$PROFILES -Pscala213"
+        fi
+        
+        echo "Building with profiles: $PROFILES"
+        
+        # Build and deploy
+        mvn clean deploy \
+          $PROFILES \
+          -DskipTests \
+          -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}" \
+          -P release
+    
+    - name: Summary
+      run: |
+        echo "## Publish Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version:** ${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Tag:** ${{ inputs.tag }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Spark Version:** ${{ matrix.spark }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Scala Version:** ${{ matrix.scala }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status:** ✅ Published" >> $GITHUB_STEP_SUMMARY
+
+  publish-bundles:
+    needs: publish
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - spark: "3.4"
+            scala: "2.12"
+          - spark: "3.4"
+            scala: "2.13"
+          - spark: "3.5"
+            scala: "2.12"
+          - spark: "3.5"
+            scala: "2.13"
+          - spark: "4.0"
+            scala: "2.13"
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.tag }}
+    
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+        server-id: ossrh
+        server-username: MAVEN_USERNAME
+        server-password: MAVEN_PASSWORD
+        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+        gpg-passphrase: MAVEN_GPG_PASSPHRASE
+    
+    - name: Cache Maven dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-maven-bundle-${{ hashFiles('**/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-maven-bundle-
+    
+    - name: Build and publish bundle artifacts
+      env:
+        MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
+        MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      run: |
+        # Configure GPG
+        echo "use-agent" >> ~/.gnupg/gpg.conf
+        echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
+        export GPG_TTY=$(tty)
+        
+        # Build and deploy bundle for specific Spark/Scala combination
+        MODULE="lance-spark-bundle-${{ matrix.spark }}_${{ matrix.scala }}"
+        
+        echo "Building bundle module: $MODULE"
+        
+        cd $MODULE
+        mvn clean deploy \
+          -DskipTests \
+          -Dgpg.passphrase="${MAVEN_GPG_PASSPHRASE}" \
+          -P release
+    
+    - name: Summary
+      run: |
+        echo "## Bundle Publish Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Bundle:** lance-spark-bundle-${{ matrix.spark }}_${{ matrix.scala }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Version:** ${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status:** ✅ Published" >> $GITHUB_STEP_SUMMARY

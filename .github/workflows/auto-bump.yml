@@ -1,0 +1,196 @@
+name: Auto Bump Version
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      bump_type:
+        description: 'Type of version bump'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  check-for-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      should_bump: ${{ steps.check.outputs.should_bump }}
+      bump_type: ${{ steps.check.outputs.bump_type }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Check for unreleased changes
+      id: check
+      run: |
+        # Get the last tag
+        LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        
+        if [ -z "$LAST_TAG" ]; then
+          echo "No tags found, should create initial release"
+          echo "should_bump=true" >> $GITHUB_OUTPUT
+          echo "bump_type=patch" >> $GITHUB_OUTPUT
+          exit 0
+        fi
+        
+        # Check for commits since last tag
+        COMMITS_SINCE_TAG=$(git rev-list --count ${LAST_TAG}..HEAD)
+        
+        if [ "$COMMITS_SINCE_TAG" -gt 0 ]; then
+          echo "Found $COMMITS_SINCE_TAG commits since last tag $LAST_TAG"
+          
+          # Analyze commit messages to determine bump type
+          BUMP_TYPE="patch"
+          
+          # Check for breaking changes (major bump)
+          if git log ${LAST_TAG}..HEAD --grep="BREAKING CHANGE" --grep="!:" | grep -q .; then
+            BUMP_TYPE="major"
+          # Check for features (minor bump)
+          elif git log ${LAST_TAG}..HEAD --grep="^feat" --grep="^feature" | grep -q .; then
+            BUMP_TYPE="minor"
+          fi
+          
+          # Override with manual input if provided
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] && [ -n "${{ inputs.bump_type }}" ]; then
+            BUMP_TYPE="${{ inputs.bump_type }}"
+          fi
+          
+          echo "should_bump=true" >> $GITHUB_OUTPUT
+          echo "bump_type=$BUMP_TYPE" >> $GITHUB_OUTPUT
+        else
+          echo "No commits since last tag $LAST_TAG"
+          echo "should_bump=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Summary
+      run: |
+        echo "## Auto Bump Check" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ steps.check.outputs.should_bump }}" == "true" ]; then
+          echo "✅ Version bump needed" >> $GITHUB_STEP_SUMMARY
+          echo "- **Bump Type:** ${{ steps.check.outputs.bump_type }}" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⏭️ No version bump needed" >> $GITHUB_STEP_SUMMARY
+        fi
+
+  create-bump-pr:
+    needs: check-for-changes
+    if: needs.check-for-changes.outputs.should_bump == 'true'
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+    
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        pip install packaging lxml
+    
+    - name: Get current version
+      id: current_version
+      run: |
+        CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+        echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        echo "Current version: $CURRENT_VERSION"
+    
+    - name: Calculate new version
+      id: new_version
+      run: |
+        python ci/calculate_version.py \
+          --current "${{ steps.current_version.outputs.version }}" \
+          --type "${{ needs.check-for-changes.outputs.bump_type }}" \
+          --channel "stable"
+    
+    - name: Create feature branch
+      run: |
+        BRANCH_NAME="auto-bump-${{ steps.new_version.outputs.version }}"
+        git checkout -b $BRANCH_NAME
+        echo "branch=$BRANCH_NAME" >> $GITHUB_ENV
+    
+    - name: Bump version
+      run: |
+        python ci/bump_version.py --version "${{ steps.new_version.outputs.version }}"
+    
+    - name: Configure git
+      run: |
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
+    
+    - name: Commit changes
+      run: |
+        git add -A
+        git commit -m "chore: bump version to ${{ steps.new_version.outputs.version }}
+        
+        Automated version bump from ${{ steps.current_version.outputs.version }} to ${{ steps.new_version.outputs.version }}.
+        Bump type: ${{ needs.check-for-changes.outputs.bump_type }}"
+    
+    - name: Push changes
+      run: |
+        git push origin ${{ env.branch }}
+    
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        branch: ${{ env.branch }}
+        base: main
+        title: "chore: bump version to ${{ steps.new_version.outputs.version }}"
+        body: |
+          ## Automated Version Bump
+          
+          This PR automatically bumps the version from `${{ steps.current_version.outputs.version }}` to `${{ steps.new_version.outputs.version }}`.
+          
+          ### Details
+          - **Bump Type:** ${{ needs.check-for-changes.outputs.bump_type }}
+          - **Triggered By:** ${{ github.event_name == 'schedule' && 'Scheduled run' || 'Manual trigger' }}
+          
+          ### Checklist
+          - [ ] Review version bump changes
+          - [ ] Verify all pom.xml files are updated
+          - [ ] Confirm CI checks pass
+          
+          ### Next Steps
+          After merging this PR, you can create a release by:
+          1. Going to Actions → Create Release workflow
+          2. Selecting the release channel (stable/preview)
+          3. Running the workflow
+          
+          ---
+          *This PR was automatically generated by the auto-bump workflow.*
+        labels: |
+          version-bump
+          automated
+        assignees: ${{ github.actor }}
+    
+    - name: Summary
+      run: |
+        echo "## Version Bump PR Created" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Current Version:** ${{ steps.current_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **New Version:** ${{ steps.new_version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Bump Type:** ${{ needs.check-for-changes.outputs.bump_type }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch:** ${{ env.branch }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✅ Pull request created successfully!" >> $GITHUB_STEP_SUMMARY
