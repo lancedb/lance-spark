@@ -25,11 +25,6 @@ on:
         required: true
         default: true
         type: boolean
-      draft_release:
-        description: 'Create a draft release on GitHub'
-        required: true
-        default: true
-        type: boolean
 
 jobs:
   create-release:
@@ -138,14 +133,14 @@ jobs:
           --repo "${{ github.repository }}" \
           --token "${{ secrets.GITHUB_TOKEN }}"
     
-    - name: Create GitHub Release (if not dry run)
+    - name: Create GitHub Release Draft (if not dry run)
       if: ${{ !inputs.dry_run }}
       uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.tag_name.outputs.tag }}
         name: ${{ steps.tag_name.outputs.tag }}
         body_path: release_notes.md
-        draft: ${{ inputs.draft_release }}
+        draft: true
         prerelease: ${{ inputs.release_channel == 'preview' }}
         token: ${{ secrets.GITHUB_TOKEN }}
     
@@ -167,11 +162,17 @@ jobs:
           echo "⚠️ This was a dry run. No changes were pushed." >> $GITHUB_STEP_SUMMARY
         else
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ inputs.release_channel }}" == "stable" ] && [ "${{ inputs.draft_release }}" == "false" ]; then
-            echo "✅ Release created! The publish workflow will be triggered automatically when the release is published." >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ inputs.draft_release }}" == "true" ]; then
-            echo "📝 Draft release created! Edit and publish it to trigger the Maven Central deployment." >> $GITHUB_STEP_SUMMARY
+          echo "📝 Draft release created successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the draft release on the [releases page](https://github.com/${{ github.repository }}/releases)" >> $GITHUB_STEP_SUMMARY
+          echo "2. Edit the release notes if needed" >> $GITHUB_STEP_SUMMARY
+          echo "3. Publish the release to:" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.release_channel }}" == "stable" ]; then
+            echo "   - Create the official release" >> $GITHUB_STEP_SUMMARY
+            echo "   - Trigger automatic publishing to Maven Central" >> $GITHUB_STEP_SUMMARY
           else
-            echo "🚀 Preview release created! Preview releases are not published to Maven Central." >> $GITHUB_STEP_SUMMARY
+            echo "   - Create a preview/beta release" >> $GITHUB_STEP_SUMMARY
+            echo "   - Note: Preview releases are not published to Maven Central" >> $GITHUB_STEP_SUMMARY
           fi
         fi
