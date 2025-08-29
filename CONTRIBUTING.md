@@ -56,4 +56,30 @@ After code merge, the contents are added to the
 during the Lance doc CI build time, and is presented in the Lance website under 
 [Apache Spark integration](https://lancedb.github.io/lance/integrations/spark).
 
-The CONTRIBUTING.md document is auto-built to the [Lance Contributing Guide](https://lancedb.github.io/lance/community/contributing/) 
+The CONTRIBUTING.md document is auto-built to the [Lance Contributing Guide](https://lancedb.github.io/lance/community/contributing/)
+
+## Release Process
+
+This section describes the CI/CD workflows for automated version management, releases, and publishing.
+
+### Version Scheme
+
+- **Stable releases:** `X.Y.Z` (e.g., 1.2.3)
+- **Preview releases:** `X.Y.Z-beta.N` (e.g., 1.2.3-beta.1)
+
+### Creating a Release
+
+1. **Create Release Draft**
+   - Go to Actions → "Create Release"
+   - Select parameters:
+     - Release type (major/minor/patch)
+     - Release channel (stable/preview)
+     - Dry run (test without pushing)
+   - Run workflow (creates a draft release)
+
+2. **Review and Publish**
+   - Go to the [Releases page](../../releases) to review the draft
+   - Edit release notes if needed
+   - Click "Publish release" to:
+     - For stable releases: Trigger automatic Maven Central publishing
+     - For preview releases: Create a beta release (not published to Maven Central)
