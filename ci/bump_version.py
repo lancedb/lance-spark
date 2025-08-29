@@ -1,79 +1,68 @@
 #!/usr/bin/env python3
 """
-Script to bump version in Maven project files
+Version management script for Lance Spark project.
+Uses bump-my-version to handle version bumping across all project components.
 """
 
 import argparse
-import xml.etree.ElementTree as ET
-import os
+import subprocess
 import sys
 from pathlib import Path
 
-def update_pom_version(pom_path, new_version):
-    """Update version in a pom.xml file"""
-    # Register namespace
-    ET.register_namespace('', 'http://maven.apache.org/POM/4.0.0')
-    
-    tree = ET.parse(pom_path)
-    root = tree.getroot()
-    
-    # Define namespace
-    ns = {'maven': 'http://maven.apache.org/POM/4.0.0'}
-    
-    # Update project version
-    version_elem = root.find('maven:version', ns)
-    if version_elem is not None:
-        version_elem.text = new_version
-    
-    # Update lance-spark.version property if it exists
-    properties = root.find('maven:properties', ns)
-    if properties is not None:
-        lance_spark_version = properties.find('maven:lance-spark.version', ns)
-        if lance_spark_version is not None:
-            lance_spark_version.text = new_version
-    
-    # Write back to file
-    tree.write(pom_path, encoding='UTF-8', xml_declaration=True)
-    print(f"Updated {pom_path}")
 
-def find_pom_files(root_dir):
-    """Find all pom.xml files in the project"""
-    pom_files = []
-    for path in Path(root_dir).rglob('pom.xml'):
-        # Skip target directories and other build artifacts
-        if 'target' not in str(path) and 'venv' not in str(path):
-            pom_files.append(path)
-    return sorted(pom_files)
+def run_command(cmd: list[str], capture_output: bool = True) -> subprocess.CompletedProcess:
+    """Run a command and return the result."""
+    print(f"Running: {' '.join(cmd)}")
+    result = subprocess.run(cmd, capture_output=capture_output, text=True)
+    if result.returncode != 0:
+        print(f"Error running command: {' '.join(cmd)}")
+        if capture_output:
+            print(f"stderr: {result.stderr}")
+        sys.exit(result.returncode)
+    return result
+
+
+def get_current_version() -> str:
+    """Get the current version from .bumpversion.toml."""
+    config_path = Path(".bumpversion.toml")
+    if not config_path.exists():
+        raise FileNotFoundError(".bumpversion.toml not found in current directory")
+    
+    with open(config_path, "r") as f:
+        for line in f:
+            if line.strip().startswith('current_version = "'):
+                return line.split('"')[1]
+    raise ValueError("Could not find current_version in .bumpversion.toml")
+
 
 def main():
-    parser = argparse.ArgumentParser(description='Bump version in Maven project')
+    parser = argparse.ArgumentParser(description='Bump version in Maven project using bump-my-version')
     parser.add_argument('--version', required=True, help='New version to set')
     parser.add_argument('--dry-run', action='store_true', help='Show what would be changed without making changes')
     
     args = parser.parse_args()
     
-    # Find project root (where this script is located)
-    script_dir = Path(__file__).parent
-    project_root = script_dir.parent
+    # Get current version
+    current_version = get_current_version()
+    new_version = args.version
     
-    # Find all pom.xml files
-    pom_files = find_pom_files(project_root)
-    
-    if not pom_files:
-        print("Error: No pom.xml files found", file=sys.stderr)
-        sys.exit(1)
-    
-    print(f"Found {len(pom_files)} pom.xml files")
-    print(f"New version: {args.version}")
+    print(f"Current version: {current_version}")
+    print(f"New version: {new_version}")
     
     if args.dry_run:
         print("\nDry run mode - no changes will be made")
-        for pom_file in pom_files:
-            print(f"Would update: {pom_file}")
+        # Run bump-my-version in dry-run mode
+        cmd = ["bump-my-version", "bump", "--current-version", current_version, 
+               "--new-version", new_version, "--dry-run", "--verbose", "--allow-dirty"]
+        run_command(cmd, capture_output=False)
     else:
-        for pom_file in pom_files:
-            update_pom_version(pom_file, args.version)
-        print(f"\nSuccessfully updated version to {args.version}")
+        # Use bump-my-version to update all files
+        print("\nUpdating version in all files...")
+        cmd = ["bump-my-version", "bump", "--current-version", current_version, 
+               "--new-version", new_version, "--no-commit", "--no-tag", "--allow-dirty"]
+        run_command(cmd)
+        print(f"\nSuccessfully updated version from {current_version} to {new_version}")
+
 
 if __name__ == '__main__':
     main()
