@@ -15,6 +15,7 @@ package com.lancedb.lance.spark.write;
 
 import com.lancedb.lance.spark.LanceConfig;
 import com.lancedb.lance.spark.LanceDataSource;
+import com.lancedb.lance.spark.TestUtils;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -91,8 +92,7 @@ public abstract class BaseSparkConnectorWriteTest {
         .write()
         .format(LanceDataSource.name)
         .option(
-            LanceConfig.CONFIG_DATASET_URI,
-            LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+            LanceConfig.CONFIG_DATASET_URI, TestUtils.getDatasetUri(dbPath.toString(), datasetName))
         .save();
 
     validateData(datasetName, 1);
@@ -105,8 +105,7 @@ public abstract class BaseSparkConnectorWriteTest {
         .write()
         .format(LanceDataSource.name)
         .option(
-            LanceConfig.CONFIG_DATASET_URI,
-            LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+            LanceConfig.CONFIG_DATASET_URI, TestUtils.getDatasetUri(dbPath.toString(), datasetName))
         .save();
 
     assertThrows(
@@ -117,7 +116,7 @@ public abstract class BaseSparkConnectorWriteTest {
               .format(LanceDataSource.name)
               .option(
                   LanceConfig.CONFIG_DATASET_URI,
-                  LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+                  TestUtils.getDatasetUri(dbPath.toString(), datasetName))
               .save();
         });
   }
@@ -129,15 +128,13 @@ public abstract class BaseSparkConnectorWriteTest {
         .write()
         .format(LanceDataSource.name)
         .option(
-            LanceConfig.CONFIG_DATASET_URI,
-            LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+            LanceConfig.CONFIG_DATASET_URI, TestUtils.getDatasetUri(dbPath.toString(), datasetName))
         .save();
     testData
         .write()
         .format(LanceDataSource.name)
         .option(
-            LanceConfig.CONFIG_DATASET_URI,
-            LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+            LanceConfig.CONFIG_DATASET_URI, TestUtils.getDatasetUri(dbPath.toString(), datasetName))
         .mode("append")
         .save();
     validateData(datasetName, 2);
@@ -154,7 +151,7 @@ public abstract class BaseSparkConnectorWriteTest {
               .format(LanceDataSource.name)
               .option(
                   LanceConfig.CONFIG_DATASET_URI,
-                  LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+                  TestUtils.getDatasetUri(dbPath.toString(), datasetName))
               .mode("append")
               .save();
         });
@@ -166,7 +163,7 @@ public abstract class BaseSparkConnectorWriteTest {
     testData
         .write()
         .format(LanceDataSource.name)
-        .save(LanceConfig.getDatasetUri(dbPath.toString(), datasetName));
+        .save(TestUtils.getDatasetUri(dbPath.toString(), datasetName));
 
     validateData(datasetName, 1);
   }
@@ -178,15 +175,13 @@ public abstract class BaseSparkConnectorWriteTest {
         .write()
         .format(LanceDataSource.name)
         .option(
-            LanceConfig.CONFIG_DATASET_URI,
-            LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+            LanceConfig.CONFIG_DATASET_URI, TestUtils.getDatasetUri(dbPath.toString(), datasetName))
         .save();
     testData
         .write()
         .format(LanceDataSource.name)
         .option(
-            LanceConfig.CONFIG_DATASET_URI,
-            LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+            LanceConfig.CONFIG_DATASET_URI, TestUtils.getDatasetUri(dbPath.toString(), datasetName))
         .mode("overwrite")
         .save();
 
@@ -200,23 +195,20 @@ public abstract class BaseSparkConnectorWriteTest {
         .write()
         .format(LanceDataSource.name)
         .option(
-            LanceConfig.CONFIG_DATASET_URI,
-            LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+            LanceConfig.CONFIG_DATASET_URI, TestUtils.getDatasetUri(dbPath.toString(), datasetName))
         .save();
     testData
         .write()
         .format(LanceDataSource.name)
         .option(
-            LanceConfig.CONFIG_DATASET_URI,
-            LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+            LanceConfig.CONFIG_DATASET_URI, TestUtils.getDatasetUri(dbPath.toString(), datasetName))
         .mode("overwrite")
         .save();
     testData
         .write()
         .format(LanceDataSource.name)
         .option(
-            LanceConfig.CONFIG_DATASET_URI,
-            LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+            LanceConfig.CONFIG_DATASET_URI, TestUtils.getDatasetUri(dbPath.toString(), datasetName))
         .mode("append")
         .save();
     validateData(datasetName, 2);
@@ -225,7 +217,7 @@ public abstract class BaseSparkConnectorWriteTest {
   @Test
   public void writeMultiFiles(TestInfo testInfo) {
     String datasetName = testInfo.getTestMethod().get().getName();
-    String filePath = LanceConfig.getDatasetUri(dbPath.toString(), datasetName);
+    String filePath = TestUtils.getDatasetUri(dbPath.toString(), datasetName);
     testData
         .write()
         .format(LanceDataSource.name)
@@ -240,7 +232,7 @@ public abstract class BaseSparkConnectorWriteTest {
   @Test
   public void writeEmptyTaskFiles(TestInfo testInfo) {
     String datasetName = testInfo.getTestMethod().get().getName();
-    String filePath = LanceConfig.getDatasetUri(dbPath.toString(), datasetName);
+    String filePath = TestUtils.getDatasetUri(dbPath.toString(), datasetName);
     testData
         .repartition(4)
         .write()
@@ -259,7 +251,7 @@ public abstract class BaseSparkConnectorWriteTest {
             .format("lance")
             .option(
                 LanceConfig.CONFIG_DATASET_URI,
-                LanceConfig.getDatasetUri(dbPath.toString(), datasetName))
+                TestUtils.getDatasetUri(dbPath.toString(), datasetName))
             .load();
 
     assertEquals(2 * iteration, data.count());
@@ -285,7 +277,7 @@ public abstract class BaseSparkConnectorWriteTest {
   @Test
   public void dropAndReplaceTable(TestInfo testInfo) {
     String datasetName = testInfo.getTestMethod().get().getName();
-    String path = LanceConfig.getDatasetUri(dbPath.toString(), datasetName);
+    String path = TestUtils.getDatasetUri(dbPath.toString(), datasetName);
     spark.sql("CREATE OR REPLACE TABLE lance.`" + path + "` AS SELECT * FROM tmp_view");
     spark.sql("CREATE OR REPLACE TABLE lance.`" + path + "` AS SELECT * FROM tmp_view");
     spark.sql("DROP TABLE lance.`" + path + "`");

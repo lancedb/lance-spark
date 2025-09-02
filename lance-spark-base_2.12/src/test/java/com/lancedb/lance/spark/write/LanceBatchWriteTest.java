@@ -16,6 +16,7 @@ package com.lancedb.lance.spark.write;
 import com.lancedb.lance.Dataset;
 import com.lancedb.lance.WriteParams;
 import com.lancedb.lance.spark.LanceConfig;
+import com.lancedb.lance.spark.TestUtils;
 
 import org.apache.arrow.dataset.scanner.Scanner;
 import org.apache.arrow.memory.BufferAllocator;
@@ -48,7 +49,7 @@ public class LanceBatchWriteTest {
   @Test
   public void testLanceDataWriter(TestInfo testInfo) throws Exception {
     String datasetName = testInfo.getTestMethod().get().getName();
-    String datasetUri = LanceConfig.getDatasetUri(tempDir.toString(), datasetName);
+    String datasetUri = TestUtils.getDatasetUri(tempDir.toString(), datasetName);
     try (BufferAllocator allocator = new RootAllocator(Long.MAX_VALUE)) {
       // Create lance dataset
       Field field = new Field("column1", FieldType.nullable(new ArrowType.Int(32, true)), null);

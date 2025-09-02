@@ -53,14 +53,14 @@ public class LanceCatalog implements TableCatalog {
   public Table createTable(
       Identifier ident, StructType schema, Transform[] partitions, Map<String, String> properties)
       throws TableAlreadyExistsException, NoSuchNamespaceException {
+    LanceConfig config = LanceConfig.from(options, ident.name());
     try {
-      LanceConfig config = LanceConfig.from(options, ident.name());
       WriteParams params = SparkOptions.genWriteParamsFromConfig(config);
       LanceDatasetAdapter.createDataset(ident.name(), schema, params);
     } catch (IllegalArgumentException e) {
       throw new TableAlreadyExistsException(ident.name());
     }
-    return new LanceDataset(LanceConfig.from(options, ident.name()), schema);
+    return new LanceDataset(config, schema);
   }
 
   @Override

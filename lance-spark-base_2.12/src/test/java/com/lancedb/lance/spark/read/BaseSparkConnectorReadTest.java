@@ -51,7 +51,7 @@ public abstract class BaseSparkConnectorReadTest {
             .format(LanceDataSource.name)
             .option(
                 LanceConfig.CONFIG_DATASET_URI,
-                LanceConfig.getDatasetUri(dbPath, TestUtils.TestTable1Config.datasetName))
+                TestUtils.getDatasetUri(dbPath, TestUtils.TestTable1Config.datasetName))
             .load();
     data.createOrReplaceTempView("test_dataset1");
   }
@@ -169,14 +169,14 @@ public abstract class BaseSparkConnectorReadTest {
         spark
             .read()
             .format("lance")
-            .load(LanceConfig.getDatasetUri(dbPath, TestUtils.TestTable1Config.datasetName));
+            .load(TestUtils.getDatasetUri(dbPath, TestUtils.TestTable1Config.datasetName));
     validateData(df, TestUtils.TestTable1Config.expectedValues);
   }
 
   @Test
   public void supportBroadcastJoin() {
     Dataset<Row> df =
-        spark.read().format("lance").load(LanceConfig.getDatasetUri(dbPath, "test_dataset3"));
+        spark.read().format("lance").load(TestUtils.getDatasetUri(dbPath, "test_dataset3"));
     df.createOrReplaceTempView("test_dataset3");
     List<Row> desc =
         spark
