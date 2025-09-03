@@ -60,7 +60,7 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
 
   @Override
   public Distribution requiredDistribution() {
-    NamedReference segmentId = Expressions.column(LanceConstant.SEGMENT_ID);
+    NamedReference segmentId = Expressions.column(LanceConstant.FRAGMENT_ID);
     return Distributions.clustered(new NamedReference[] {segmentId});
   }
 

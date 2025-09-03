@@ -60,7 +60,7 @@ public class LancePositionDeltaOperation implements RowLevelOperation, SupportsD
 
   @Override
   public NamedReference[] requiredMetadataAttributes() {
-    NamedReference segmentId = Expressions.column(LanceConstant.SEGMENT_ID);
+    NamedReference segmentId = Expressions.column(LanceConstant.FRAGMENT_ID);
     return new NamedReference[] {segmentId};
   }
 

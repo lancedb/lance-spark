@@ -90,7 +90,7 @@ public class LanceFragmentScanner implements AutoCloseable {
         scanOptions.setColumnOrderings(inputPartition.getTopNSortOrders().get());
       }
       boolean withFragmentId =
-          inputPartition.getSchema().getFieldIndex(LanceConstant.SEGMENT_ID).nonEmpty();
+          inputPartition.getSchema().getFieldIndex(LanceConstant.FRAGMENT_ID).nonEmpty();
       return new LanceFragmentScanner(
           fragment.newScan(scanOptions.build()), fragmentId, withFragmentId);
     } catch (Throwable throwable) {
@@ -127,7 +127,7 @@ public class LanceFragmentScanner implements AutoCloseable {
         .map(StructField::name)
         .filter(
             name ->
-                !name.equals(LanceConstant.SEGMENT_ID)
+                !name.equals(LanceConstant.FRAGMENT_ID)
                     && !name.equals(LanceConstant.ROW_ID)
                     && !name.equals(LanceConstant.ROW_ADDRESS))
         .collect(Collectors.toList());

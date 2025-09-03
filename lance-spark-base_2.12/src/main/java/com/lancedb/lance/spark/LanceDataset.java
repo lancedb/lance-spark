@@ -43,7 +43,7 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
         new MetadataColumn() {
           @Override
           public String name() {
-            return LanceConstant.SEGMENT_ID;
+            return LanceConstant.FRAGMENT_ID;
           }
 
           @Override
