@@ -26,7 +26,7 @@ public class LanceConfigTest {
   public void testLanceConfigFromCaseInsensitiveStringMap() {
     String dbPath = "file://path/to/db/";
     String datasetName = "testDatasetName";
-    String datasetUri = LanceConfig.getDatasetUri(dbPath, datasetName);
+    String datasetUri = TestUtils.getDatasetUri(dbPath, datasetName);
     CaseInsensitiveStringMap options =
         new CaseInsensitiveStringMap(
             new HashMap<String, String>() {
@@ -46,7 +46,7 @@ public class LanceConfigTest {
   public void testLanceConfigFromCaseInsensitiveStringMap2() {
     String dbPath = "s3://bucket/folder/";
     String datasetName = "testDatasetName";
-    String datasetUri = LanceConfig.getDatasetUri(dbPath, datasetName);
+    String datasetUri = TestUtils.getDatasetUri(dbPath, datasetName);
     CaseInsensitiveStringMap options =
         new CaseInsensitiveStringMap(
             new HashMap<String, String>() {
@@ -66,7 +66,7 @@ public class LanceConfigTest {
   public void testLanceConfigFromMap() {
     String dbPath = "file://path/to/db/";
     String datasetName = "testDatasetName";
-    String datasetUri = LanceConfig.getDatasetUri(dbPath, datasetName);
+    String datasetUri = TestUtils.getDatasetUri(dbPath, datasetName);
     Map<String, String> properties = new HashMap<>();
     properties.put(LanceConfig.CONFIG_DATASET_URI, datasetUri);
 
@@ -81,7 +81,7 @@ public class LanceConfigTest {
   public void testLanceConfigFromMap2() {
     String dbPath = "s3://bucket/folder/";
     String datasetName = "testDatasetName";
-    String datasetUri = LanceConfig.getDatasetUri(dbPath, datasetName);
+    String datasetUri = TestUtils.getDatasetUri(dbPath, datasetName);
     Map<String, String> properties = new HashMap<>();
     properties.put(LanceConfig.CONFIG_DATASET_URI, datasetUri);
 

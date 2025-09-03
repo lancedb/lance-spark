@@ -14,6 +14,7 @@
 package com.lancedb.lance.spark;
 
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
+import org.jetbrains.annotations.TestOnly;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -73,17 +74,10 @@ public class LanceConfig implements Serializable {
     return new LanceConfig(paths[0], paths[1], datasetUri, pushDownFilters, options);
   }
 
-  public static String getDatasetUri(String dbPath, String datasetUri) {
-    StringBuilder sb = new StringBuilder().append(dbPath);
-    if (!dbPath.endsWith("/")) {
-      sb.append("/");
-    }
-    return sb.append(datasetUri).append(LANCE_FILE_SUFFIX).toString();
-  }
-
+  @TestOnly
   private static String[] extractDbPathAndDatasetName(String datasetUri) {
-    if (datasetUri == null || !datasetUri.endsWith(LANCE_FILE_SUFFIX)) {
-      throw new IllegalArgumentException("Invalid dataset uri: " + datasetUri);
+    if (datasetUri == null) {
+      throw new IllegalArgumentException("The dataset uri should not be null");
     }
 
     int lastSlashIndex = datasetUri.lastIndexOf('/');
@@ -91,12 +85,18 @@ public class LanceConfig implements Serializable {
       throw new IllegalArgumentException("Invalid dataset uri: " + datasetUri);
     }
 
+    String dbPath = datasetUri.substring(0, lastSlashIndex + 1);
     String datasetNameWithSuffix = datasetUri.substring(lastSlashIndex + 1);
-    return new String[] {
-      datasetUri.substring(0, lastSlashIndex + 1),
-      datasetNameWithSuffix.substring(
-          0, datasetNameWithSuffix.length() - LANCE_FILE_SUFFIX.length())
-    };
+    String datasetName;
+    if (datasetUri.endsWith(LANCE_FILE_SUFFIX)) {
+      datasetName =
+          datasetNameWithSuffix.substring(
+              0, datasetNameWithSuffix.length() - LANCE_FILE_SUFFIX.length());
+    } else {
+      datasetName = datasetNameWithSuffix;
+    }
+
+    return new String[] {dbPath, datasetName};
   }
 
   public String getDbPath() {

@@ -50,7 +50,7 @@ public abstract class BaseSparkConnectorReadWithRowIdTest {
             .format(LanceDataSource.name)
             .option(
                 LanceConfig.CONFIG_DATASET_URI,
-                LanceConfig.getDatasetUri(dbPath, TestUtils.TestTable1Config.datasetName))
+                TestUtils.getDatasetUri(dbPath, TestUtils.TestTable1Config.datasetName))
             .load();
   }
 

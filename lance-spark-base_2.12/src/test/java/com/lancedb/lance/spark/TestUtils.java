@@ -68,7 +68,7 @@ public class TestUtils {
       } else {
         throw new IllegalArgumentException("example_db not found in resources directory");
       }
-      datasetUri = LanceConfig.getDatasetUri(dbPath, datasetName);
+      datasetUri = getDatasetUri(dbPath, datasetName);
       lanceConfig = LanceConfig.from(datasetUri);
       inputPartition =
           new LanceInputPartition(
@@ -79,5 +79,16 @@ public class TestUtils {
               Optional.empty(),
               "test");
     }
+  }
+
+  public static String getDatasetUri(String dbPath, String datasetUri) {
+    StringBuilder sb = new StringBuilder().append(dbPath);
+    if (!dbPath.endsWith("/")) {
+      sb.append("/");
+    }
+    if (dbPath.equals(TestTable1Config.dbPath) && datasetUri.startsWith("test_dataset")) {
+      return sb.append(datasetUri).append(".lance").toString();
+    }
+    return sb.append(datasetUri).toString();
   }
 }

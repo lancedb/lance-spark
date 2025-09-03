@@ -15,6 +15,7 @@ package com.lancedb.lance.spark.read;
 
 import com.lancedb.lance.spark.LanceConfig;
 import com.lancedb.lance.spark.LanceDataSource;
+import com.lancedb.lance.spark.TestUtils;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -55,8 +56,7 @@ public abstract class BaseSparkConnectorLineItemTest {
         spark
             .read()
             .format(LanceDataSource.name)
-            .option(
-                LanceConfig.CONFIG_DATASET_URI, LanceConfig.getDatasetUri(dbPath, "lineitem_10"))
+            .option(LanceConfig.CONFIG_DATASET_URI, TestUtils.getDatasetUri(dbPath, "lineitem_10"))
             .load();
     lanceData.createOrReplaceTempView("lance_dataset");
     parquetData = spark.read().parquet(parquetPath);
