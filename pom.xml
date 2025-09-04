@@ -51,7 +51,7 @@
 
     <properties>
         <lance-spark.version>0.0.10</lance-spark.version>
-        <lance.version>0.34.0</lance.version>
+        <lance.version>0.35.0</lance.version>
         <lance-namespace.version>0.0.14</lance-namespace.version>
 
         <spark34.version>3.4.4</spark34.version>

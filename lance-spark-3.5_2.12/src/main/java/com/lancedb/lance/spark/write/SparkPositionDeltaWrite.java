@@ -21,6 +21,7 @@ import com.lancedb.lance.spark.LanceConstant;
 import com.lancedb.lance.spark.SparkOptions;
 import com.lancedb.lance.spark.internal.LanceDatasetAdapter;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.connector.distributions.Distribution;
 import org.apache.spark.sql.connector.distributions.Distributions;
@@ -38,6 +39,7 @@ import org.apache.spark.sql.connector.write.PhysicalWriteInfo;
 import org.apache.spark.sql.connector.write.RequiresDistributionAndOrdering;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 import org.apache.spark.sql.types.StructType;
+import org.roaringbitmap.RoaringBitmap;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -137,7 +139,7 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
     private final LanceDataWriter writer;
 
     // Key is fragmentId, Value is fragment's deleted row indexes
-    private final Map<Integer, List<Integer>> deletedRows;
+    private final Map<Integer, RoaringBitmap> deletedRows;
 
     private LanceDeltaWriter(LanceConfig config, LanceDataWriter writer) {
       this.config = config;
@@ -152,7 +154,7 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
           fragmentId,
           (k, v) -> {
             if (v == null) {
-              v = new ArrayList<>();
+              v = new RoaringBitmap();
             }
             // Get the row index which is low 32 bits of row address.
             // See
@@ -185,7 +187,8 @@ public class SparkPositionDeltaWrite implements DeltaWrite, RequiresDistribution
       this.deletedRows.forEach(
           (fragmentId, rowIndexes) -> {
             FragmentMetadata updatedFragment =
-                LanceDatasetAdapter.deleteRows(config, fragmentId, rowIndexes);
+                LanceDatasetAdapter.deleteRows(
+                    config, fragmentId, ImmutableList.copyOf(rowIndexes));
             if (updatedFragment != null) {
               updatedFragments.add(updatedFragment);
             } else {

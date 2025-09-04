@@ -99,6 +99,10 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
     this.sparkSchema = sparkSchema;
   }
 
+  public LanceConfig config() {
+    return config;
+  }
+
   @Override
   public ScanBuilder newScanBuilder(CaseInsensitiveStringMap caseInsensitiveStringMap) {
     return new LanceScanBuilder(sparkSchema, config);

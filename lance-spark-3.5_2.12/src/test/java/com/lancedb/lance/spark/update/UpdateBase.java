@@ -11,25 +11,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lancedb.lance.spark;
+package com.lancedb.lance.spark.update;
 
 import com.lancedb.lance.namespace.dir.DirectoryNamespaceConfig;
 
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
-public class UpdateTableTest {
+public abstract class UpdateBase {
   protected SparkSession spark;
   protected TableCatalog catalog;
   protected String catalogName = "lance_ns";
@@ -37,7 +33,7 @@ public class UpdateTableTest {
   @TempDir protected Path tempDir;
 
   @BeforeEach
-  void setup() throws IOException {
+  void setup() {
     spark =
         SparkSession.builder()
             .appName("lance-namespace-test")
@@ -57,7 +53,7 @@ public class UpdateTableTest {
   }
 
   @AfterEach
-  void tearDown() throws IOException {
+  void tearDown() {
     if (spark != null) {
       spark.stop();
     }
@@ -71,55 +67,5 @@ public class UpdateTableTest {
     Map<String, String> configs = new HashMap<>();
     configs.put(DirectoryNamespaceConfig.ROOT, tempDir.toString());
     return configs;
-  }
-
-  @Test
-  public void testSparkSqlUpdate() throws Exception {
-    String baseName = "sql_test_table";
-    String tableName = baseName + "_" + UUID.randomUUID().toString().replace("-", "");
-
-    // Create a table using SQL DDL
-    spark.sql(
-        "CREATE TABLE "
-            + catalogName
-            + ".default."
-            + tableName
-            + " (id INT NOT NULL, name STRING, value INT)");
-
-    // Create test data and insert using SQL
-    spark.sql(
-        "INSERT INTO "
-            + catalogName
-            + ".default."
-            + tableName
-            + " VALUES "
-            + "(1, 'Alice', 100), "
-            + "(2, 'Bob', 200), "
-            + "(3, 'Charlie', 300)");
-
-    spark.sql(
-        "INSERT INTO "
-            + catalogName
-            + ".default."
-            + tableName
-            + " VALUES "
-            + "(4, 'Tom', 100), "
-            + "(5, 'Frank', 200)");
-
-    spark.sql(
-        "INSERT INTO " + catalogName + ".default." + tableName + " VALUES " + "(6, 'Penny', 200)");
-
-    String select = "Select * from " + catalogName + ".default." + tableName + " order by id";
-
-    spark.sql(
-        "Update "
-            + catalogName
-            + ".default."
-            + tableName
-            + " set value = value + 1 where value = 200");
-
-    Assertions.assertEquals(
-        "[[1,Alice,100], [2,Bob,201], [3,Charlie,300], [4,Tom,100], [5,Frank,201], [6,Penny,201]]",
-        spark.sql(select).collectAsList().toString());
   }
 }
