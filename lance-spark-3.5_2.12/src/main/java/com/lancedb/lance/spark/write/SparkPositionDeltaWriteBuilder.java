@@ -11,13 +11,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lancedb.lance.spark;
+package com.lancedb.lance.spark.write;
 
+import com.lancedb.lance.spark.LanceConfig;
+
+import org.apache.spark.sql.connector.write.DeltaWrite;
+import org.apache.spark.sql.connector.write.DeltaWriteBuilder;
 import org.apache.spark.sql.types.StructType;
 
-public class LanceSparkDataSource extends LanceDataSource {
-  @Override
-  public LanceDataset createDataset(LanceConfig config, StructType sparkSchema) {
-    return new LancePositionDeltaDataset(config, sparkSchema);
+public class SparkPositionDeltaWriteBuilder implements DeltaWriteBuilder {
+  private final StructType sparkSchema;
+  private final LanceConfig config;
+
+  public SparkPositionDeltaWriteBuilder(StructType sparkSchema, LanceConfig config) {
+    this.sparkSchema = sparkSchema;
+    this.config = config;
+  }
+
+  public DeltaWrite build() {
+    return new SparkPositionDeltaWrite(sparkSchema, config);
   }
 }

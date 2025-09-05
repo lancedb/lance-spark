@@ -18,6 +18,6 @@ import org.apache.spark.sql.types.StructType;
 public class LanceNamespaceSparkCatalog extends BaseLanceNamespaceSparkCatalog {
 
   public LanceDataset createDataset(LanceConfig config, StructType sparkSchema) {
-    return new LanceDataset(config, sparkSchema);
+    return new LancePositionDeltaDataset(config, sparkSchema);
   }
 }

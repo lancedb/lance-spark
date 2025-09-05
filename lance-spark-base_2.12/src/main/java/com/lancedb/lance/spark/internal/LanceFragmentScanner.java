@@ -57,9 +57,13 @@ public class LanceFragmentScanner implements AutoCloseable {
                 }
               });
   private final LanceScanner scanner;
+  private final int fragmentId;
+  private final boolean withFragemtId;
 
-  private LanceFragmentScanner(LanceScanner scanner) {
+  private LanceFragmentScanner(LanceScanner scanner, int fragmentId, boolean withFragmentId) {
     this.scanner = scanner;
+    this.fragmentId = fragmentId;
+    this.withFragemtId = withFragmentId;
   }
 
   public static LanceFragmentScanner create(int fragmentId, LanceInputPartition inputPartition) {
@@ -85,7 +89,10 @@ public class LanceFragmentScanner implements AutoCloseable {
       if (inputPartition.getTopNSortOrders().isPresent()) {
         scanOptions.setColumnOrderings(inputPartition.getTopNSortOrders().get());
       }
-      return new LanceFragmentScanner(fragment.newScan(scanOptions.build()));
+      boolean withFragmentId =
+          inputPartition.getSchema().getFieldIndex(LanceConstant.FRAGMENT_ID).nonEmpty();
+      return new LanceFragmentScanner(
+          fragment.newScan(scanOptions.build()), fragmentId, withFragmentId);
     } catch (Throwable throwable) {
       throw new RuntimeException(throwable);
     }
@@ -107,11 +114,22 @@ public class LanceFragmentScanner implements AutoCloseable {
     }
   }
 
+  public int fragmentId() {
+    return fragmentId;
+  }
+
+  public boolean withFragemtId() {
+    return withFragemtId;
+  }
+
   private static List<String> getColumnNames(StructType schema) {
     return Arrays.stream(schema.fields())
         .map(StructField::name)
         .filter(
-            name -> !name.equals(LanceConstant.ROW_ID) && !name.equals(LanceConstant.ROW_ADDRESS))
+            name ->
+                !name.equals(LanceConstant.FRAGMENT_ID)
+                    && !name.equals(LanceConstant.ROW_ID)
+                    && !name.equals(LanceConstant.ROW_ADDRESS))
         .collect(Collectors.toList());
   }
 
