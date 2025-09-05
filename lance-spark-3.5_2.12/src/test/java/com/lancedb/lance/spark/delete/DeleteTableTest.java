@@ -11,68 +11,152 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lancedb.lance.spark.update;
+package com.lancedb.lance.spark.delete;
 
+import com.lancedb.lance.namespace.dir.DirectoryNamespaceConfig;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.connector.catalog.TableCatalog;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class UpdateStructTest extends UpdateBase {
+public class DeleteTableTest {
+  protected SparkSession spark;
+  protected TableCatalog catalog;
+  protected String catalogName = "lance_ns";
+
+  @TempDir
+  protected Path tempDir;
+
+  @BeforeEach
+  void setup() {
+    spark =
+        SparkSession.builder()
+            .appName("lance-namespace-test")
+            .master("local")
+            .config(
+                "spark.sql.catalog." + catalogName,
+                "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+            .config("spark.sql.catalog." + catalogName + ".impl", getNsImpl())
+            .getOrCreate();
+
+    Map<String, String> additionalConfigs = getAdditionalNsConfigs();
+    for (Map.Entry<String, String> entry : additionalConfigs.entrySet()) {
+      spark.conf().set("spark.sql.catalog." + catalogName + "." + entry.getKey(), entry.getValue());
+    }
+
+    catalog = (TableCatalog) spark.sessionState().catalogManager().catalog(catalogName);
+  }
+
+  @AfterEach
+  void tearDown() {
+    if (spark != null) {
+      spark.stop();
+    }
+  }
+
+  protected String getNsImpl() {
+    return "dir";
+  }
+
+  protected Map<String, String> getAdditionalNsConfigs() {
+    Map<String, String> configs = new HashMap<>();
+    configs.put(DirectoryNamespaceConfig.ROOT, tempDir.toString());
+    return configs;
+  }
+
   @Test
-  public void testUpdateWholeStructSomeRows() {
+  public void testDeleteNoRows() {
     TableOperator op = new TableOperator(spark, catalogName);
     op.create();
 
     op.insert(
         Arrays.asList(Row.of(1, "Alice", 100), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
 
-    op.update("AliceNew", 101, "id = 1");
+    op.delete("value > 400");
+    op.check(
+        Arrays.asList(Row.of(1, "Alice", 100), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
+  }
+
+  @Test
+  public void testDeleteSomeRows() {
+    TableOperator op = new TableOperator(spark, catalogName);
+    op.create();
+
+    op.insert(
+        Arrays.asList(Row.of(1, "Alice", 100), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
+
+    op.delete("value >= 200");
+    op.check(
+        Collections.singletonList(Row.of(1, "Alice", 100)));
+  }
+
+  @Test
+  public void testDeleteAllRows() {
+    TableOperator op = new TableOperator(spark, catalogName);
+    op.create();
+
+    op.insert(
+        Arrays.asList(Row.of(1, "Alice", 100), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
+
+    op.delete("value > 0");
+    op.check(Collections.emptyList());
+  }
+
+  @Test
+  public void testDeleteMultipleTimes() {
+    TableOperator op = new TableOperator(spark, catalogName);
+    op.create();
+
+    op.insert(
+        Arrays.asList(Row.of(1, "Alice", 100), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
+
+    // Delete one row
+    op.delete("value = 100");
+    op.check(
+        Arrays.asList(Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
+
+    // Delete with same condition
+    op.delete("value = 100");
+    op.check(
+        Arrays.asList(Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
+
+    // Delete other row
+    op.delete("value = 200");
+    op.check(
+        Collections.singletonList(Row.of(3, "Charlie", 300)));
+  }
+
+  @Test
+  public void testDeleteOnMultiFragments() {
+    TableOperator op = new TableOperator(spark, catalogName);
+    op.create();
+
+    op.insert(
+        Arrays.asList(Row.of(1, "Alice", 100), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
+
+    op.insert(Arrays.asList(Row.of(4, "Tom", 100), Row.of(5, "Frank", 200)));
+
+    op.insert(Collections.singletonList(Row.of(6, "Penny", 200)));
+
+    op.delete("value = 200");
     op.check(
         Arrays.asList(
-            Row.of(1, "AliceNew", 101), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
-  }
-
-  @Test
-  public void testUpdateWholeStructAllRows() {
-    TableOperator op = new TableOperator(spark, catalogName);
-    op.create();
-
-    op.insert(
-        Arrays.asList(Row.of(1, "Alice", 100), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
-
-    op.update("New", 0, "id > 0");
-    op.check(Arrays.asList(Row.of(1, "New", 0), Row.of(2, "New", 0), Row.of(3, "New", 0)));
-  }
-
-  @Test
-  public void testUpdateChildSomeRows() {
-    TableOperator op = new TableOperator(spark, catalogName);
-    op.create();
-
-    op.insert(
-        Arrays.asList(Row.of(1, "Alice", 100), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
-
-    op.update(101, "id = 1");
-    op.check(
-        Arrays.asList(Row.of(1, "Alice", 101), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
-  }
-
-  @Test
-  public void testUpdateChildAllRows() {
-    TableOperator op = new TableOperator(spark, catalogName);
-    op.create();
-
-    op.insert(
-        Arrays.asList(Row.of(1, "Alice", 100), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
-
-    op.update(0, "id > 0");
-    op.check(Arrays.asList(Row.of(1, "Alice", 0), Row.of(2, "Bob", 0), Row.of(3, "Charlie", 0)));
+            Row.of(1, "Alice", 100),
+            Row.of(3, "Charlie", 300),
+            Row.of(4, "Tom", 100)));
   }
 
   private static class TableOperator {
@@ -96,7 +180,7 @@ public class UpdateStructTest extends UpdateBase {
               + catalogName
               + ".default."
               + tableName
-              + " (id INT NOT NULL, meta STRUCT<name: STRING, value: INT>)");
+              + " (id INT NOT NULL, name STRING, value INT)");
     }
 
     public void insert(List<Row> rows) {
@@ -109,19 +193,10 @@ public class UpdateStructTest extends UpdateBase {
       spark.sql(sql);
     }
 
-    public void update(int value, String condition) {
+    public void delete(String condition) {
       String sql =
           String.format(
-              "Update %s.default.%s set meta=named_struct('name', meta.name, 'value', %d) where %s",
-              catalogName, tableName, value, condition);
-      spark.sql(sql);
-    }
-
-    public void update(String name, int value, String condition) {
-      String sql =
-          String.format(
-              "Update %s.default.%s set meta=named_struct('name', '%s', 'value', %d) where %s",
-              catalogName, tableName, name, value, condition);
+              "Delete from %s.default.%s where %s", catalogName, tableName, condition);
       spark.sql(sql);
     }
 
@@ -129,10 +204,7 @@ public class UpdateStructTest extends UpdateBase {
       String sql = String.format("Select * from %s.default.%s order by id", catalogName, tableName);
       List<Row> actual =
           spark.sql(sql).collectAsList().stream()
-              .map(
-                  row ->
-                      Row.of(
-                          row.getInt(0), row.getStruct(1).getString(0), row.getStruct(1).getInt(1)))
+              .map(row -> Row.of(row.getInt(0), row.getString(1), row.getInt(2)))
               .collect(Collectors.toList());
       Assertions.assertEquals(expected, actual);
     }
@@ -174,7 +246,7 @@ public class UpdateStructTest extends UpdateBase {
     }
 
     private String insertSql() {
-      return String.format("(%d, named_struct('name', '%s', 'value', %d))", id, name, value);
+      return String.format("(%d, '%s', %d)", id, name, value);
     }
   }
 }
