@@ -1,4 +1,6 @@
 title: DML
 nav:
   - insert-into.md
+  - update.md
+  - delete.md
   - dataframe-write.md
