@@ -14,6 +14,7 @@
 package com.lancedb.lance.spark.delete;
 
 import com.lancedb.lance.namespace.dir.DirectoryNamespaceConfig;
+
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.junit.jupiter.api.AfterEach;
@@ -37,8 +38,7 @@ public class DeleteTableTest {
   protected TableCatalog catalog;
   protected String catalogName = "lance_ns";
 
-  @TempDir
-  protected Path tempDir;
+  @TempDir protected Path tempDir;
 
   @BeforeEach
   void setup() {
@@ -99,8 +99,7 @@ public class DeleteTableTest {
         Arrays.asList(Row.of(1, "Alice", 100), Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
 
     op.delete("value >= 200");
-    op.check(
-        Collections.singletonList(Row.of(1, "Alice", 100)));
+    op.check(Collections.singletonList(Row.of(1, "Alice", 100)));
   }
 
   @Test
@@ -125,18 +124,15 @@ public class DeleteTableTest {
 
     // Delete one row
     op.delete("value = 100");
-    op.check(
-        Arrays.asList(Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
+    op.check(Arrays.asList(Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
 
     // Delete with same condition
     op.delete("value = 100");
-    op.check(
-        Arrays.asList(Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
+    op.check(Arrays.asList(Row.of(2, "Bob", 200), Row.of(3, "Charlie", 300)));
 
     // Delete other row
     op.delete("value = 200");
-    op.check(
-        Collections.singletonList(Row.of(3, "Charlie", 300)));
+    op.check(Collections.singletonList(Row.of(3, "Charlie", 300)));
   }
 
   @Test
@@ -153,10 +149,7 @@ public class DeleteTableTest {
 
     op.delete("value = 200");
     op.check(
-        Arrays.asList(
-            Row.of(1, "Alice", 100),
-            Row.of(3, "Charlie", 300),
-            Row.of(4, "Tom", 100)));
+        Arrays.asList(Row.of(1, "Alice", 100), Row.of(3, "Charlie", 300), Row.of(4, "Tom", 100)));
   }
 
   private static class TableOperator {
@@ -195,8 +188,7 @@ public class DeleteTableTest {
 
     public void delete(String condition) {
       String sql =
-          String.format(
-              "Delete from %s.default.%s where %s", catalogName, tableName, condition);
+          String.format("Delete from %s.default.%s where %s", catalogName, tableName, condition);
       spark.sql(sql);
     }
 

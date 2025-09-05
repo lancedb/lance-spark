@@ -14,6 +14,7 @@
 package com.lancedb.lance.spark.update;
 
 import com.lancedb.lance.namespace.dir.DirectoryNamespaceConfig;
+
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.TableCatalog;
 import org.junit.jupiter.api.AfterEach;
@@ -37,8 +38,7 @@ public class UpdateTableTest {
   protected TableCatalog catalog;
   protected String catalogName = "lance_ns";
 
-  @TempDir
-  protected Path tempDir;
+  @TempDir protected Path tempDir;
 
   @BeforeEach
   void setup() {
@@ -193,7 +193,8 @@ public class UpdateTableTest {
             Row.of(4, "Tom", 100, "Tom", 100, Arrays.asList(100, 101)),
             Row.of(5, "Frank", 200, "Frank", 200, Arrays.asList(200, 201))));
 
-    op.insert(Collections.singletonList(Row.of(6, "Penny", 200, "Penny", 200, Arrays.asList(200, 201))));
+    op.insert(
+        Collections.singletonList(Row.of(6, "Penny", 200, "Penny", 200, Arrays.asList(200, 201))));
 
     op.updateBasicValue("value = 200");
     op.check(
@@ -219,11 +220,15 @@ public class UpdateTableTest {
 
     // Delete some rows
     op.delete("id = 1 or id = 2");
-    op.check(Collections.singletonList(Row.of(3, "Charlie", 300, "Charlie", 300, Arrays.asList(300, 301))));
+    op.check(
+        Collections.singletonList(
+            Row.of(3, "Charlie", 300, "Charlie", 300, Arrays.asList(300, 301))));
 
     // Update all rows
     op.updateBasicValue("value > 0");
-    op.check(Collections.singletonList(Row.of(3, "Charlie", 301, "Charlie", 300, Arrays.asList(300, 301))));
+    op.check(
+        Collections.singletonList(
+            Row.of(3, "Charlie", 301, "Charlie", 300, Arrays.asList(300, 301))));
   }
 
   @Test
@@ -407,9 +412,7 @@ public class UpdateTableTest {
 
     public void delete(String condition) {
       String sql =
-          String.format(
-              "Delete from %s.default.%s where %s",
-              catalogName, tableName, condition);
+          String.format("Delete from %s.default.%s where %s", catalogName, tableName, condition);
       spark.sql(sql);
     }
 
@@ -460,13 +463,15 @@ public class UpdateTableTest {
       String sql = String.format("Select * from %s.default.%s order by id", catalogName, tableName);
       List<Row> actual =
           spark.sql(sql).collectAsList().stream()
-              .map(row -> Row.of(
-                  row.getInt(0),
-                  row.getString(1),
-                  row.getInt(2),
-                  row.getStruct(3).getString(0),
-                  row.getStruct(3).getInt(1),
-                  row.getList(4)))
+              .map(
+                  row ->
+                      Row.of(
+                          row.getInt(0),
+                          row.getString(1),
+                          row.getInt(2),
+                          row.getStruct(3).getString(0),
+                          row.getStruct(3).getInt(1),
+                          row.getList(4)))
               .collect(Collectors.toList());
       Assertions.assertEquals(expected, actual);
     }
@@ -480,7 +485,8 @@ public class UpdateTableTest {
     int metaValue;
     List<Integer> values;
 
-    private static Row of(int id, String name, int value, String metaName, int metaValue, List<Integer> values) {
+    private static Row of(
+        int id, String name, int value, String metaName, int metaValue, List<Integer> values) {
       Row row = new Row();
       row.id = id;
       row.name = name;
@@ -515,14 +521,19 @@ public class UpdateTableTest {
 
     @Override
     public String toString() {
-      return String.format("Row(id=%s, name=%s, value=%s, metaName=%s, metaValue=%s, values=%s)",
+      return String.format(
+          "Row(id=%s, name=%s, value=%s, metaName=%s, metaValue=%s, values=%s)",
           id, name, value, metaName, metaValue, values);
     }
 
     private String insertSql() {
       return String.format(
           "(%d, '%s', %d, NAMED_STRUCT('name', '%s', 'value', %d), ARRAY(%s))",
-          id, name, value, metaName, metaValue,
+          id,
+          name,
+          value,
+          metaName,
+          metaValue,
           values.stream().map(String::valueOf).collect(Collectors.joining(",")));
     }
   }
