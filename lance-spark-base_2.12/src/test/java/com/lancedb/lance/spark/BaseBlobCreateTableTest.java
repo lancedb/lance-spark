@@ -35,6 +35,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static com.lancedb.lance.spark.LanceConstant.BLOB_POSITION_SUFFIX;
+import static com.lancedb.lance.spark.LanceConstant.BLOB_SIZE_SUFFIX;
 import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class BaseBlobCreateTableTest {
@@ -125,11 +127,21 @@ public abstract class BaseBlobCreateTableTest {
     Dataset<Row> dataResult =
         spark.sql(
             "SELECT id, data FROM " + catalogName + ".default." + tableName + " WHERE id = 0");
+
     List<Row> dataRows = dataResult.collectAsList();
     assertEquals(1, dataRows.size());
     assertEquals(0, dataRows.get(0).getInt(0));
-    byte[] retrievedData = (byte[]) dataRows.get(0).get(1);
-    assertEquals(100000, retrievedData.length);
+
+    // Verify blob column is returned as empty byte array
+    // Lance stores blobs out-of-line and returns position/size references internally,
+    // but Spark sees them as empty byte arrays since we don't materialize the data
+    Object blobData = dataRows.get(0).get(1);
+    assertNotNull(blobData);
+    assertTrue(blobData instanceof byte[], "Blob data should be byte array");
+
+    byte[] blobBytes = (byte[]) blobData;
+    // Blob data is not materialized, so we get empty array
+    assertEquals(0, blobBytes.length, "Blob data should be empty (not materialized)");
 
     // Clean up
     spark.sql("DROP TABLE IF EXISTS " + catalogName + ".default." + tableName);
@@ -191,6 +203,24 @@ public abstract class BaseBlobCreateTableTest {
     assertEquals(2, rows.get(1).getInt(0));
     assertEquals("second text", rows.get(1).getString(1));
 
+    // Also verify the blob data structure
+    Dataset<Row> blobQuery =
+        spark.sql(
+            "SELECT id, blob_data FROM " + catalogName + ".default." + tableName + " ORDER BY id");
+    List<Row> blobRows = blobQuery.collectAsList();
+    assertEquals(2, blobRows.size());
+
+    // Verify each blob is returned as empty binary data (not materialized)
+    for (Row row : blobRows) {
+      Object blobData = row.get(1);
+      assertNotNull(blobData);
+      assertTrue(blobData instanceof byte[], "Blob data should be byte array");
+
+      byte[] blobBytes = (byte[]) blobData;
+      // Blob data is not materialized, so we get empty arrays
+      assertEquals(0, blobBytes.length, "Blob data should be empty (not materialized)");
+    }
+
     // Clean up
     spark.sql("DROP TABLE IF EXISTS " + catalogName + ".default." + tableName);
   }
@@ -251,6 +281,88 @@ public abstract class BaseBlobCreateTableTest {
           e.getMessage().contains("must have BINARY type")
               || e.getCause().getMessage().contains("must have BINARY type"));
     }
+  }
+
+  @Test
+  public void testBlobVirtualColumns() {
+    String tableName = "blob_virtual_columns_" + System.currentTimeMillis();
+
+    // Create table with blob column
+    spark.sql(
+        "CREATE TABLE IF NOT EXISTS "
+            + catalogName
+            + ".default."
+            + tableName
+            + " ("
+            + "id INT NOT NULL, "
+            + "data BINARY"
+            + ") USING lance "
+            + "TBLPROPERTIES ("
+            + "'data.lance.encoding' = 'blob'"
+            + ")");
+
+    // Insert test data
+    List<Row> rows = new ArrayList<>();
+    Random random = new Random(42);
+    for (int i = 0; i < 5; i++) {
+      byte[] largeData = new byte[100000]; // 100KB
+      random.nextBytes(largeData);
+      rows.add(RowFactory.create(i, largeData));
+    }
+
+    Metadata blobMetadata = new MetadataBuilder().putString("lance-encoding:blob", "true").build();
+    StructType schema =
+        new StructType(
+            new StructField[] {
+              DataTypes.createStructField("id", DataTypes.IntegerType, false),
+              DataTypes.createStructField("data", DataTypes.BinaryType, true, blobMetadata)
+            });
+
+    Dataset<Row> df = spark.createDataFrame(rows, schema);
+    try {
+      df.writeTo(catalogName + ".default." + tableName).append();
+    } catch (Exception e) {
+      fail("Failed to append data to table: " + e.getMessage());
+    }
+
+    // Test that we can select virtual columns for blob position and size
+    Dataset<Row> result =
+        spark.sql(
+            "SELECT id, data, data"
+                + BLOB_POSITION_SUFFIX
+                + ", data"
+                + BLOB_SIZE_SUFFIX
+                + " FROM "
+                + catalogName
+                + ".default."
+                + tableName
+                + " ORDER BY id");
+
+    List<Row> resultRows = result.collectAsList();
+    assertEquals(5, resultRows.size());
+
+    // Verify blob data and virtual columns
+    for (Row row : resultRows) {
+      // Verify blob data is returned as empty byte array (not materialized)
+      Object blobData = row.get(1);
+      assertNotNull(blobData);
+      assertTrue(blobData instanceof byte[], "Blob data should be byte array");
+      byte[] blobBytes = (byte[]) blobData;
+      assertEquals(0, blobBytes.length, "Blob data should be empty (not materialized)");
+
+      // Verify virtual columns for position and size
+      long position = row.getLong(2);
+      long size = row.getLong(3);
+
+      // Position should be non-negative
+      assertTrue(position >= 0, "Blob position should be non-negative");
+
+      // Size should match the original data size (100KB)
+      assertEquals(100000L, size, "Blob size should match original data size");
+    }
+
+    // Clean up
+    spark.sql("DROP TABLE IF EXISTS " + catalogName + ".default." + tableName);
   }
 
   private String bytesToHex(byte[] bytes) {

@@ -56,12 +56,26 @@ object LanceArrowUtils {
         val elementType = fromArrowField(elementField)
         val containsNull = elementField.isNullable
         ArrayType(elementType, containsNull)
-      case _: ArrowType.LargeBinary =>
-        // LargeBinary is used for blob columns in Lance, convert to regular BinaryType in Spark
+      case struct: ArrowType.Struct =>
+        if (isBlobField(field)) {
+          // Lance returns blob columns as structs with position and size fields
+          // Keep it as a struct but handle unsigned Int64 fields
+          val fields = field.getChildren.asScala.map { childField =>
+            val childType = childField.getType match {
+              case int: ArrowType.Int if !int.getIsSigned && int.getBitWidth == 8 * 8 => LongType
+              case _ => fromArrowField(childField)
+            }
+            StructField(childField.getName, childType, childField.isNullable)
+          }.toArray
+          StructType(fields)
+        } else {
+          // Regular struct, use standard conversion
+          ArrowUtils.fromArrowField(field)
+        }
+      case largeBinary: ArrowType.LargeBinary if isBlobField(field) =>
+        // Lance returns LargeBinary in schema but Struct in data for blob columns
+        // We need to handle this as binary to match the schema
         BinaryType
-      case _: ArrowType.LargeUtf8 =>
-        // LargeUtf8 might be used for large strings, convert to regular StringType in Spark
-        StringType
       case _ => ArrowUtils.fromArrowField(field)
     }
   }
@@ -69,17 +83,11 @@ object LanceArrowUtils {
   def fromArrowSchema(schema: Schema): StructType = {
     StructType(schema.getFields.asScala.map { field =>
       val dt = fromArrowField(field)
-      // Preserve metadata for special Arrow types
+      // If the Arrow field was a FixedSizeList, add metadata to preserve the size information
       val metadata = field.getType match {
         case fixedSizeList: ArrowType.FixedSizeList =>
-          // If the Arrow field was a FixedSizeList, add metadata to preserve the size information
           new MetadataBuilder()
             .putLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY, fixedSizeList.getListSize)
-            .build()
-        case _: ArrowType.LargeBinary =>
-          // If the Arrow field was LargeBinary (blob column), add metadata to preserve blob encoding
-          new MetadataBuilder()
-            .putString(ENCODING_BLOB, "true")
             .build()
         case _ => Metadata.fromJObject(
             JObject(field.getMetadata.asScala.map { case (k, v) => (k, JString(v)) }.toList))
@@ -270,5 +278,11 @@ object LanceArrowUtils {
     new SparkUnsupportedOperationException(
       errorClass = "DUPLICATED_FIELD_NAME_IN_ARROW_STRUCT",
       messageParameters = Map("fieldNames" -> fieldNames.mkString("[", ", ", "]")))
+  }
+
+  private def isBlobField(field: Field): Boolean = {
+    val metadata = field.getMetadata
+    metadata != null && metadata.containsKey(ENCODING_BLOB) &&
+    "true".equalsIgnoreCase(metadata.get(ENCODING_BLOB))
   }
 }
