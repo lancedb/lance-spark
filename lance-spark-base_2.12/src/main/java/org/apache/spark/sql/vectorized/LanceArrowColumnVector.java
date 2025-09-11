@@ -13,6 +13,8 @@
  */
 package org.apache.spark.sql.vectorized;
 
+import org.apache.arrow.vector.LargeVarBinaryVector;
+import org.apache.arrow.vector.LargeVarCharVector;
 import org.apache.arrow.vector.UInt8Vector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.FixedSizeListVector;
@@ -23,6 +25,8 @@ import org.apache.spark.unsafe.types.UTF8String;
 public class LanceArrowColumnVector extends ColumnVector {
   private UInt8Accessor uInt8Accessor;
   private FixedSizeListAccessor fixedSizeListAccessor;
+  private LargeBinaryAccessor largeBinaryAccessor;
+  private LargeStringAccessor largeStringAccessor;
   private ArrowColumnVector arrowColumnVector;
 
   public LanceArrowColumnVector(ValueVector vector) {
@@ -32,6 +36,12 @@ public class LanceArrowColumnVector extends ColumnVector {
     } else if (vector instanceof FixedSizeListVector) {
       // Handle FixedSizeListVector with custom accessor
       fixedSizeListAccessor = new FixedSizeListAccessor((FixedSizeListVector) vector);
+    } else if (vector instanceof LargeVarBinaryVector) {
+      // Handle LargeVarBinaryVector for blob columns
+      largeBinaryAccessor = new LargeBinaryAccessor((LargeVarBinaryVector) vector);
+    } else if (vector instanceof LargeVarCharVector) {
+      // Handle LargeVarCharVector for large strings
+      largeStringAccessor = new LargeStringAccessor((LargeVarCharVector) vector);
     } else {
       arrowColumnVector = new ArrowColumnVector(vector);
     }
@@ -45,6 +55,12 @@ public class LanceArrowColumnVector extends ColumnVector {
     if (fixedSizeListAccessor != null) {
       fixedSizeListAccessor.close();
     }
+    if (largeBinaryAccessor != null) {
+      largeBinaryAccessor.close();
+    }
+    if (largeStringAccessor != null) {
+      largeStringAccessor.close();
+    }
     if (arrowColumnVector != null) {
       arrowColumnVector.close();
     }
@@ -57,6 +73,12 @@ public class LanceArrowColumnVector extends ColumnVector {
     }
     if (fixedSizeListAccessor != null) {
       return fixedSizeListAccessor.getNullCount() > 0;
+    }
+    if (largeBinaryAccessor != null) {
+      return largeBinaryAccessor.getNullCount() > 0;
+    }
+    if (largeStringAccessor != null) {
+      return largeStringAccessor.getNullCount() > 0;
     }
     if (arrowColumnVector != null) {
       return arrowColumnVector.hasNull();
@@ -72,6 +94,12 @@ public class LanceArrowColumnVector extends ColumnVector {
     if (fixedSizeListAccessor != null) {
       return fixedSizeListAccessor.getNullCount();
     }
+    if (largeBinaryAccessor != null) {
+      return largeBinaryAccessor.getNullCount();
+    }
+    if (largeStringAccessor != null) {
+      return largeStringAccessor.getNullCount();
+    }
     if (arrowColumnVector != null) {
       return arrowColumnVector.numNulls();
     }
@@ -85,6 +113,12 @@ public class LanceArrowColumnVector extends ColumnVector {
     }
     if (fixedSizeListAccessor != null) {
       return fixedSizeListAccessor.isNullAt(rowId);
+    }
+    if (largeBinaryAccessor != null) {
+      return largeBinaryAccessor.isNullAt(rowId);
+    }
+    if (largeStringAccessor != null) {
+      return largeStringAccessor.isNullAt(rowId);
     }
     if (arrowColumnVector != null) {
       return arrowColumnVector.isNullAt(rowId);
@@ -180,6 +214,9 @@ public class LanceArrowColumnVector extends ColumnVector {
 
   @Override
   public UTF8String getUTF8String(int rowId) {
+    if (largeStringAccessor != null) {
+      return largeStringAccessor.getUTF8String(rowId);
+    }
     if (arrowColumnVector != null) {
       return arrowColumnVector.getUTF8String(rowId);
     }
@@ -188,6 +225,9 @@ public class LanceArrowColumnVector extends ColumnVector {
 
   @Override
   public byte[] getBinary(int rowId) {
+    if (largeBinaryAccessor != null) {
+      return largeBinaryAccessor.getBinary(rowId);
+    }
     if (arrowColumnVector != null) {
       return arrowColumnVector.getBinary(rowId);
     }

@@ -56,6 +56,12 @@ object LanceArrowUtils {
         val elementType = fromArrowField(elementField)
         val containsNull = elementField.isNullable
         ArrayType(elementType, containsNull)
+      case _: ArrowType.LargeBinary =>
+        // LargeBinary is used for blob columns in Lance, convert to regular BinaryType in Spark
+        BinaryType
+      case _: ArrowType.LargeUtf8 =>
+        // LargeUtf8 might be used for large strings, convert to regular StringType in Spark
+        StringType
       case _ => ArrowUtils.fromArrowField(field)
     }
   }
@@ -63,11 +69,17 @@ object LanceArrowUtils {
   def fromArrowSchema(schema: Schema): StructType = {
     StructType(schema.getFields.asScala.map { field =>
       val dt = fromArrowField(field)
-      // If the Arrow field was a FixedSizeList, add metadata to preserve the size information
+      // Preserve metadata for special Arrow types
       val metadata = field.getType match {
         case fixedSizeList: ArrowType.FixedSizeList =>
+          // If the Arrow field was a FixedSizeList, add metadata to preserve the size information
           new MetadataBuilder()
             .putLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY, fixedSizeList.getListSize)
+            .build()
+        case _: ArrowType.LargeBinary =>
+          // If the Arrow field was LargeBinary (blob column), add metadata to preserve blob encoding
+          new MetadataBuilder()
+            .putString(ENCODING_BLOB, "true")
             .build()
         case _ => Metadata.fromJObject(
             JObject(field.getMetadata.asScala.map { case (k, v) => (k, JString(v)) }.toList))
