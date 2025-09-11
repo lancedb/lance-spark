@@ -76,15 +76,16 @@ public class SchemaConverter {
   }
 
   /**
-   * Processes a Spark schema with table properties to add metadata for vector columns.
+   * Processes a Spark schema with table properties to add metadata for vector and blob columns.
    *
    * @param sparkSchema the original Spark StructType
-   * @param properties table properties that may contain vector column metadata
-   * @return StructType with metadata added for vector columns
+   * @param properties table properties that may contain vector column metadata or blob encoding
+   * @return StructType with metadata added for vector and blob columns
    */
   public static StructType processSchemaWithProperties(
       StructType sparkSchema, Map<String, String> properties) {
-    return addVectorMetadata(sparkSchema, properties);
+    StructType schemaWithVectors = addVectorMetadata(sparkSchema, properties);
+    return addBlobMetadata(schemaWithVectors, properties);
   }
 
   /**
@@ -136,6 +137,58 @@ public class SchemaConverter {
                   + field.name()
                   + "' has vector property but is not an ARRAY type: "
                   + field.dataType());
+        }
+      } else {
+        // Keep field as-is
+        newFields[i] = field;
+      }
+    }
+
+    return new StructType(newFields);
+  }
+
+  /**
+   * Adds metadata to BinaryType fields based on table properties for blob columns. Properties with
+   * pattern "<column_name>.lance.encoding" = "blob" are applied to matching columns.
+   *
+   * @param sparkSchema the original Spark StructType
+   * @param properties table properties that may contain blob column metadata
+   * @return StructType with metadata added for blob columns
+   */
+  private static StructType addBlobMetadata(
+      StructType sparkSchema, Map<String, String> properties) {
+    if (properties == null || properties.isEmpty()) {
+      return sparkSchema;
+    }
+
+    StructField[] newFields = new StructField[sparkSchema.fields().length];
+    for (int i = 0; i < sparkSchema.fields().length; i++) {
+      StructField field = sparkSchema.fields()[i];
+      String blobEncodingProperty = field.name() + ".lance.encoding";
+
+      if (properties.containsKey(blobEncodingProperty)) {
+        // This field should be a blob column
+        String encodingValue = properties.get(blobEncodingProperty);
+        if ("blob".equalsIgnoreCase(encodingValue)) {
+          if (field.dataType() instanceof BinaryType) {
+            // Add metadata for blob encoding
+            Metadata newMetadata =
+                new MetadataBuilder()
+                    .withMetadata(field.metadata())
+                    .putString("lance-encoding:blob", "true")
+                    .build();
+            newFields[i] =
+                new StructField(field.name(), field.dataType(), field.nullable(), newMetadata);
+          } else {
+            throw new IllegalArgumentException(
+                "Blob column '"
+                    + field.name()
+                    + "' must have BINARY type, found: "
+                    + field.dataType());
+          }
+        } else {
+          // Keep field as-is if encoding value is not blob
+          newFields[i] = field;
         }
       } else {
         // Keep field as-is
