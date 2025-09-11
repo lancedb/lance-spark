@@ -13,6 +13,8 @@
  */
 package org.apache.spark.sql.vectorized;
 
+import com.lancedb.lance.spark.utils.BlobUtils;
+
 import org.apache.arrow.vector.UInt8Vector;
 import org.apache.arrow.vector.ValueVector;
 import org.apache.arrow.vector.complex.FixedSizeListVector;
@@ -35,20 +37,13 @@ public class LanceArrowColumnVector extends ColumnVector {
     } else if (vector instanceof FixedSizeListVector) {
       // Handle FixedSizeListVector with custom accessor
       fixedSizeListAccessor = new FixedSizeListAccessor((FixedSizeListVector) vector);
-    } else if (vector instanceof StructVector && isBlobStruct(vector.getField())) {
+    } else if (vector instanceof StructVector && BlobUtils.isBlobArrowField(vector.getField())) {
       // Handle blob structs with special accessor to avoid unsigned Int64 issues
       // Creating BlobStructAccessor for blob field
       blobStructAccessor = new BlobStructAccessor((StructVector) vector);
     } else {
       arrowColumnVector = new ArrowColumnVector(vector);
     }
-  }
-
-  private boolean isBlobStruct(org.apache.arrow.vector.types.pojo.Field field) {
-    java.util.Map<String, String> metadata = field.getMetadata();
-    return metadata != null
-        && metadata.containsKey("lance-encoding:blob")
-        && "true".equalsIgnoreCase(metadata.get("lance-encoding:blob"));
   }
 
   @Override

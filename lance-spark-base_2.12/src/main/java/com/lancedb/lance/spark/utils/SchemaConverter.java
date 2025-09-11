@@ -47,6 +47,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.lancedb.lance.spark.utils.BlobUtils.LANCE_ENCODING_BLOB_KEY;
+import static com.lancedb.lance.spark.utils.BlobUtils.LANCE_ENCODING_BLOB_VALUE;
+import static com.lancedb.lance.spark.utils.VectorUtils.ARROW_FIXED_SIZE_LIST_SIZE_KEY;
+
 /**
  * Utility class for converting Spark schema types to JsonArrow schema types used by the Lance
  * Namespace API.
@@ -105,7 +109,7 @@ public class SchemaConverter {
     StructField[] newFields = new StructField[sparkSchema.fields().length];
     for (int i = 0; i < sparkSchema.fields().length; i++) {
       StructField field = sparkSchema.fields()[i];
-      String vectorSizeProperty = field.name() + ".arrow.fixed-size-list.size";
+      String vectorSizeProperty = VectorUtils.createVectorSizePropertyKey(field.name());
 
       if (properties.containsKey(vectorSizeProperty)) {
         // This field should be a vector column
@@ -120,7 +124,7 @@ public class SchemaConverter {
             Metadata newMetadata =
                 new MetadataBuilder()
                     .withMetadata(field.metadata())
-                    .putLong("arrow.fixed-size-list.size", vectorSize)
+                    .putLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY, vectorSize)
                     .build();
             newFields[i] =
                 new StructField(field.name(), field.dataType(), field.nullable(), newMetadata);
@@ -175,7 +179,7 @@ public class SchemaConverter {
             Metadata newMetadata =
                 new MetadataBuilder()
                     .withMetadata(field.metadata())
-                    .putString("lance-encoding:blob", "true")
+                    .putString(LANCE_ENCODING_BLOB_KEY, LANCE_ENCODING_BLOB_VALUE)
                     .build();
             newFields[i] =
                 new StructField(field.name(), field.dataType(), field.nullable(), newMetadata);
@@ -281,9 +285,9 @@ public class SchemaConverter {
       // Check if this should be a FixedSizeList based on metadata
       boolean isFixedSizeList = false;
       Long fixedSize = null;
-      if (metadata != null && metadata.contains("arrow.fixed-size-list.size")) {
+      if (metadata != null && metadata.contains(ARROW_FIXED_SIZE_LIST_SIZE_KEY)) {
         try {
-          fixedSize = metadata.getLong("arrow.fixed-size-list.size");
+          fixedSize = metadata.getLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY);
           isFixedSizeList = true;
         } catch (Exception e) {
           // Fall back to regular list if metadata is invalid

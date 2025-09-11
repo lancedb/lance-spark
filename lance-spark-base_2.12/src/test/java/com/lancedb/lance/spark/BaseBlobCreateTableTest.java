@@ -14,6 +14,7 @@
 package com.lancedb.lance.spark;
 
 import com.lancedb.lance.namespace.dir.DirectoryNamespaceConfig;
+import com.lancedb.lance.spark.utils.BlobUtils;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
@@ -103,7 +104,10 @@ public abstract class BaseBlobCreateTableTest {
     }
 
     // Create DataFrame with proper schema
-    Metadata blobMetadata = new MetadataBuilder().putString("lance-encoding:blob", "true").build();
+    Metadata blobMetadata =
+        new MetadataBuilder()
+            .putString(BlobUtils.LANCE_ENCODING_BLOB_KEY, BlobUtils.LANCE_ENCODING_BLOB_VALUE)
+            .build();
     StructType schema =
         new StructType(
             new StructField[] {
@@ -310,7 +314,10 @@ public abstract class BaseBlobCreateTableTest {
       rows.add(RowFactory.create(i, largeData));
     }
 
-    Metadata blobMetadata = new MetadataBuilder().putString("lance-encoding:blob", "true").build();
+    Metadata blobMetadata =
+        new MetadataBuilder()
+            .putString(BlobUtils.LANCE_ENCODING_BLOB_KEY, BlobUtils.LANCE_ENCODING_BLOB_VALUE)
+            .build();
     StructType schema =
         new StructType(
             new StructField[] {

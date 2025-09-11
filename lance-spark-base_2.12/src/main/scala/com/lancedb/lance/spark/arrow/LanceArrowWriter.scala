@@ -13,6 +13,8 @@
  */
 package com.lancedb.lance.spark.arrow
 
+import com.lancedb.lance.spark.utils.VectorUtils
+
 import org.apache.arrow.memory.RootAllocator
 import org.apache.arrow.vector._
 import org.apache.arrow.vector.complex._
@@ -120,8 +122,8 @@ object LanceArrowWriter {
       metadata: org.apache.spark.sql.types.Metadata,
       elementType: DataType): Boolean = {
     metadata != null &&
-    metadata.contains(LanceArrowUtils.ARROW_FIXED_SIZE_LIST_SIZE_KEY) &&
-    metadata.getLong(LanceArrowUtils.ARROW_FIXED_SIZE_LIST_SIZE_KEY) > 0 &&
+    metadata.contains(VectorUtils.ARROW_FIXED_SIZE_LIST_SIZE_KEY) &&
+    metadata.getLong(VectorUtils.ARROW_FIXED_SIZE_LIST_SIZE_KEY) > 0 &&
     (elementType == FloatType || elementType == DoubleType)
   }
 }
