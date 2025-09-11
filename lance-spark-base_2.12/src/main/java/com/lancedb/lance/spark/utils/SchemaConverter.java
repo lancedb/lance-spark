@@ -47,6 +47,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.lancedb.lance.spark.utils.BlobUtils.LANCE_ENCODING_BLOB_KEY;
+import static com.lancedb.lance.spark.utils.BlobUtils.LANCE_ENCODING_BLOB_VALUE;
+import static com.lancedb.lance.spark.utils.VectorUtils.ARROW_FIXED_SIZE_LIST_SIZE_KEY;
+
 /**
  * Utility class for converting Spark schema types to JsonArrow schema types used by the Lance
  * Namespace API.
@@ -76,15 +80,16 @@ public class SchemaConverter {
   }
 
   /**
-   * Processes a Spark schema with table properties to add metadata for vector columns.
+   * Processes a Spark schema with table properties to add metadata for vector and blob columns.
    *
    * @param sparkSchema the original Spark StructType
-   * @param properties table properties that may contain vector column metadata
-   * @return StructType with metadata added for vector columns
+   * @param properties table properties that may contain vector column metadata or blob encoding
+   * @return StructType with metadata added for vector and blob columns
    */
   public static StructType processSchemaWithProperties(
       StructType sparkSchema, Map<String, String> properties) {
-    return addVectorMetadata(sparkSchema, properties);
+    StructType schemaWithVectors = addVectorMetadata(sparkSchema, properties);
+    return addBlobMetadata(schemaWithVectors, properties);
   }
 
   /**
@@ -104,7 +109,7 @@ public class SchemaConverter {
     StructField[] newFields = new StructField[sparkSchema.fields().length];
     for (int i = 0; i < sparkSchema.fields().length; i++) {
       StructField field = sparkSchema.fields()[i];
-      String vectorSizeProperty = field.name() + ".arrow.fixed-size-list.size";
+      String vectorSizeProperty = VectorUtils.createVectorSizePropertyKey(field.name());
 
       if (properties.containsKey(vectorSizeProperty)) {
         // This field should be a vector column
@@ -119,7 +124,7 @@ public class SchemaConverter {
             Metadata newMetadata =
                 new MetadataBuilder()
                     .withMetadata(field.metadata())
-                    .putLong("arrow.fixed-size-list.size", vectorSize)
+                    .putLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY, vectorSize)
                     .build();
             newFields[i] =
                 new StructField(field.name(), field.dataType(), field.nullable(), newMetadata);
@@ -136,6 +141,58 @@ public class SchemaConverter {
                   + field.name()
                   + "' has vector property but is not an ARRAY type: "
                   + field.dataType());
+        }
+      } else {
+        // Keep field as-is
+        newFields[i] = field;
+      }
+    }
+
+    return new StructType(newFields);
+  }
+
+  /**
+   * Adds metadata to BinaryType fields based on table properties for blob columns. Properties with
+   * pattern "<column_name>.lance.encoding" = "blob" are applied to matching columns.
+   *
+   * @param sparkSchema the original Spark StructType
+   * @param properties table properties that may contain blob column metadata
+   * @return StructType with metadata added for blob columns
+   */
+  private static StructType addBlobMetadata(
+      StructType sparkSchema, Map<String, String> properties) {
+    if (properties == null || properties.isEmpty()) {
+      return sparkSchema;
+    }
+
+    StructField[] newFields = new StructField[sparkSchema.fields().length];
+    for (int i = 0; i < sparkSchema.fields().length; i++) {
+      StructField field = sparkSchema.fields()[i];
+      String blobEncodingProperty = field.name() + ".lance.encoding";
+
+      if (properties.containsKey(blobEncodingProperty)) {
+        // This field should be a blob column
+        String encodingValue = properties.get(blobEncodingProperty);
+        if ("blob".equalsIgnoreCase(encodingValue)) {
+          if (field.dataType() instanceof BinaryType) {
+            // Add metadata for blob encoding
+            Metadata newMetadata =
+                new MetadataBuilder()
+                    .withMetadata(field.metadata())
+                    .putString(LANCE_ENCODING_BLOB_KEY, LANCE_ENCODING_BLOB_VALUE)
+                    .build();
+            newFields[i] =
+                new StructField(field.name(), field.dataType(), field.nullable(), newMetadata);
+          } else {
+            throw new IllegalArgumentException(
+                "Blob column '"
+                    + field.name()
+                    + "' must have BINARY type, found: "
+                    + field.dataType());
+          }
+        } else {
+          // Keep field as-is if encoding value is not blob
+          newFields[i] = field;
         }
       } else {
         // Keep field as-is
@@ -228,9 +285,9 @@ public class SchemaConverter {
       // Check if this should be a FixedSizeList based on metadata
       boolean isFixedSizeList = false;
       Long fixedSize = null;
-      if (metadata != null && metadata.contains("arrow.fixed-size-list.size")) {
+      if (metadata != null && metadata.contains(ARROW_FIXED_SIZE_LIST_SIZE_KEY)) {
         try {
-          fixedSize = metadata.getLong("arrow.fixed-size-list.size");
+          fixedSize = metadata.getLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY);
           isFixedSizeList = true;
         } catch (Exception e) {
           // Fall back to regular list if metadata is invalid

@@ -14,6 +14,7 @@
 package com.lancedb.lance.spark;
 
 import com.lancedb.lance.spark.read.LanceScanBuilder;
+import com.lancedb.lance.spark.utils.BlobUtils;
 import com.lancedb.lance.spark.write.SparkWrite;
 
 import com.google.common.collect.ImmutableSet;
@@ -27,9 +28,12 @@ import org.apache.spark.sql.connector.write.LogicalWriteInfo;
 import org.apache.spark.sql.connector.write.WriteBuilder;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /** Lance Spark Dataset. */
@@ -130,6 +134,57 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
 
   @Override
   public MetadataColumn[] metadataColumns() {
-    return METADATA_COLUMNS;
+    // Start with the base metadata columns
+    List<MetadataColumn> columns = new ArrayList<>();
+    for (MetadataColumn col : METADATA_COLUMNS) {
+      columns.add(col);
+    }
+
+    // Add virtual columns for blob fields
+    for (StructField field : sparkSchema.fields()) {
+      if (BlobUtils.isBlobSparkField(field)) {
+        final String fieldName = field.name();
+
+        // Add position column
+        columns.add(
+            new MetadataColumn() {
+              @Override
+              public String name() {
+                return fieldName + LanceConstant.BLOB_POSITION_SUFFIX;
+              }
+
+              @Override
+              public DataType dataType() {
+                return DataTypes.LongType;
+              }
+
+              @Override
+              public boolean isNullable() {
+                return true;
+              }
+            });
+
+        // Add size column
+        columns.add(
+            new MetadataColumn() {
+              @Override
+              public String name() {
+                return fieldName + LanceConstant.BLOB_SIZE_SUFFIX;
+              }
+
+              @Override
+              public DataType dataType() {
+                return DataTypes.LongType;
+              }
+
+              @Override
+              public boolean isNullable() {
+                return true;
+              }
+            });
+      }
+    }
+
+    return columns.toArray(new MetadataColumn[0]);
   }
 }

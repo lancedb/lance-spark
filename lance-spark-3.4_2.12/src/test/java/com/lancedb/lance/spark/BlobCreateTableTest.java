@@ -13,12 +13,7 @@
  */
 package com.lancedb.lance.spark;
 
-public class LanceConstant {
-  public static final String FRAGMENT_ID = "_fragid";
-  public static final String ROW_ID = "_rowid";
-  public static final String ROW_ADDRESS = "_rowaddr";
-
-  // Blob metadata column suffixes
-  public static final String BLOB_POSITION_SUFFIX = "__blob_pos";
-  public static final String BLOB_SIZE_SUFFIX = "__blob_size";
+/** Concrete implementation of BaseBlobCreateTableTest for Spark 3.4. */
+public class BlobCreateTableTest extends BaseBlobCreateTableTest {
+  // All test methods are inherited from BaseBlobCreateTableTest
 }
