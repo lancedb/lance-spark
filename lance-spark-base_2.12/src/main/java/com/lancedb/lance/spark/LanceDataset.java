@@ -14,6 +14,7 @@
 package com.lancedb.lance.spark;
 
 import com.lancedb.lance.spark.read.LanceScanBuilder;
+import com.lancedb.lance.spark.utils.BlobUtils;
 import com.lancedb.lance.spark.write.SparkWrite;
 
 import com.google.common.collect.ImmutableSet;
@@ -141,7 +142,7 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
 
     // Add virtual columns for blob fields
     for (StructField field : sparkSchema.fields()) {
-      if (field.metadata() != null && field.metadata().contains("lance-encoding:blob")) {
+      if (BlobUtils.isBlobSparkField(field)) {
         final String fieldName = field.name();
 
         // Add position column

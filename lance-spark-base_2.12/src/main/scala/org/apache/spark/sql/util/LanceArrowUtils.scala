@@ -24,6 +24,7 @@ package org.apache.spark.sql.util
  */
 
 import com.lancedb.lance.spark.LanceConstant
+import com.lancedb.lance.spark.utils.{BlobUtils, VectorUtils}
 
 import org.apache.arrow.vector.complex.MapVector
 import org.apache.arrow.vector.types.{DateUnit, FloatingPointPrecision, IntervalUnit, TimeUnit}
@@ -39,8 +40,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConverters._
 
 object LanceArrowUtils {
-  val ARROW_FIXED_SIZE_LIST_SIZE_KEY = "arrow.fixed-size-list.size"
-  val ENCODING_BLOB = "lance-encoding:blob"
+  val ARROW_FIXED_SIZE_LIST_SIZE_KEY = VectorUtils.ARROW_FIXED_SIZE_LIST_SIZE_KEY
+  val ENCODING_BLOB = BlobUtils.LANCE_ENCODING_BLOB_KEY
 
   def fromArrowField(field: Field): DataType = {
     field.getType match {
@@ -259,10 +260,8 @@ object LanceArrowUtils {
   private def shouldBeFixedSizeList(
       metadata: org.apache.spark.sql.types.Metadata,
       elementType: DataType): Boolean = {
-    metadata != null &&
-    metadata.contains(ARROW_FIXED_SIZE_LIST_SIZE_KEY) &&
-    metadata.getLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY) > 0 &&
-    (elementType == FloatType || elementType == DoubleType)
+    // Create a temporary ArrayType to use VectorUtils.shouldBeFixedSizeList
+    VectorUtils.shouldBeFixedSizeList(ArrayType(elementType, true), metadata)
   }
 
   /* Copy from copy of org.apache.spark.sql.errors.ExecutionErrors for Spark version compatibility */
