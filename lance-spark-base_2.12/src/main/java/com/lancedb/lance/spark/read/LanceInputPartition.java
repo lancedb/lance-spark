@@ -17,6 +17,7 @@ import com.lancedb.lance.ipc.ColumnOrdering;
 import com.lancedb.lance.spark.LanceConfig;
 import com.lancedb.lance.spark.utils.Optional;
 
+import org.apache.spark.sql.connector.expressions.aggregate.Aggregation;
 import org.apache.spark.sql.connector.read.InputPartition;
 import org.apache.spark.sql.types.StructType;
 
@@ -33,6 +34,7 @@ public class LanceInputPartition implements InputPartition {
   private final Optional<Integer> limit;
   private final Optional<Integer> offset;
   private final Optional<List<ColumnOrdering>> topNSortOrders;
+  private final Optional<Aggregation> pushedAggregation;
   private final String scanId;
 
   public LanceInputPartition(
@@ -51,6 +53,7 @@ public class LanceInputPartition implements InputPartition {
         Optional.empty(),
         Optional.empty(),
         Optional.empty(),
+        Optional.empty(),
         scanId);
   }
 
@@ -63,6 +66,7 @@ public class LanceInputPartition implements InputPartition {
       Optional<Integer> limit,
       Optional<Integer> offset,
       Optional<List<ColumnOrdering>> topNSortOrders,
+      Optional<Aggregation> pushedAggregation,
       String scanId) {
     this.schema = schema;
     this.partitionId = partitionId;
@@ -72,6 +76,7 @@ public class LanceInputPartition implements InputPartition {
     this.limit = limit;
     this.offset = offset;
     this.topNSortOrders = topNSortOrders;
+    this.pushedAggregation = pushedAggregation;
     this.scanId = scanId;
   }
 
@@ -105,6 +110,10 @@ public class LanceInputPartition implements InputPartition {
 
   public Optional<List<ColumnOrdering>> getTopNSortOrders() {
     return topNSortOrders;
+  }
+
+  public Optional<Aggregation> getPushedAggregation() {
+    return pushedAggregation;
   }
 
   public String getScanId() {

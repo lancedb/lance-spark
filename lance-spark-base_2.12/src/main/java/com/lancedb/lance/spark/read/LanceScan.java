@@ -19,6 +19,9 @@ import com.lancedb.lance.spark.utils.Optional;
 
 import org.apache.arrow.util.Preconditions;
 import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.connector.expressions.aggregate.AggregateFunc;
+import org.apache.spark.sql.connector.expressions.aggregate.Aggregation;
+import org.apache.spark.sql.connector.expressions.aggregate.CountStar;
 import org.apache.spark.sql.connector.read.Batch;
 import org.apache.spark.sql.connector.read.InputPartition;
 import org.apache.spark.sql.connector.read.PartitionReader;
@@ -46,6 +49,7 @@ public class LanceScan
   private final Optional<Integer> limit;
   private final Optional<Integer> offset;
   private final Optional<List<ColumnOrdering>> topNSortOrders;
+  private final Optional<Aggregation> pushedAggregation;
   private final String scanId = UUID.randomUUID().toString();
 
   public LanceScan(
@@ -54,13 +58,15 @@ public class LanceScan
       Optional<String> whereConditions,
       Optional<Integer> limit,
       Optional<Integer> offset,
-      Optional<List<ColumnOrdering>> topNSortOrders) {
+      Optional<List<ColumnOrdering>> topNSortOrders,
+      Optional<Aggregation> pushedAggregation) {
     this.schema = schema;
     this.config = config;
     this.whereConditions = whereConditions;
     this.limit = limit;
     this.offset = offset;
     this.topNSortOrders = topNSortOrders;
+    this.pushedAggregation = pushedAggregation;
   }
 
   @Override
@@ -83,6 +89,7 @@ public class LanceScan
                     limit,
                     offset,
                     topNSortOrders,
+                    pushedAggregation,
                     scanId))
         .toArray(InputPartition[]::new);
   }
@@ -94,6 +101,10 @@ public class LanceScan
 
   @Override
   public StructType readSchema() {
+    if (pushedAggregation.isPresent()) {
+      return new StructType()
+          .add("count", org.apache.spark.sql.types.DataTypes.LongType);
+    }
     return schema;
   }
 
@@ -106,6 +117,7 @@ public class LanceScan
     result = result.$plus(scala.Tuple2.apply("limit", limit.toString()));
     result = result.$plus(scala.Tuple2.apply("offset", offset.toString()));
     result = result.$plus(scala.Tuple2.apply("topNSortOrders", topNSortOrders.toString()));
+    result = result.$plus(scala.Tuple2.apply("pushedAggregation", pushedAggregation.toString()));
     return result;
   }
 
@@ -114,7 +126,7 @@ public class LanceScan
     return new LanceStatistics(config);
   }
 
-  private class LanceReaderFactory implements PartitionReaderFactory {
+  private static class LanceReaderFactory implements PartitionReaderFactory {
     @Override
     public PartitionReader<InternalRow> createReader(InputPartition partition) {
       Preconditions.checkArgument(
@@ -128,7 +140,16 @@ public class LanceScan
       Preconditions.checkArgument(
           partition instanceof LanceInputPartition,
           "Unknown InputPartition type. Expecting LanceInputPartition");
-      return new LanceColumnarPartitionReader((LanceInputPartition) partition);
+
+      LanceInputPartition lancePartition = (LanceInputPartition) partition;
+      if (lancePartition.getPushedAggregation().isPresent()) {
+        AggregateFunc[] aggFunc = lancePartition.getPushedAggregation().get().aggregateExpressions();
+        if (aggFunc.length == 1 && aggFunc[0] instanceof CountStar) {
+          return new LanceCountStarPartitionReader(lancePartition);
+        }
+      }
+
+      return new LanceColumnarPartitionReader(lancePartition);
     }
 
     @Override
