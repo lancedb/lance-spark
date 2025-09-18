@@ -40,7 +40,8 @@ public class AggregatePushDownTest {
             .appName("LanceAggregatePushDownTest")
             .master("local[*]")
             .config("spark.ui.enabled", "false")
-            .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceCatalog")
+            .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
+            .config("spark.sql.catalog.lance.impl", "dir")
             .config("spark.sql.catalog.lance.path", tempDir.toString())
             .getOrCreate();
   }
@@ -56,10 +57,7 @@ public class AggregatePushDownTest {
   public void testCountStarPushDown() {
     String datasetPath = tempDir.resolve("count_test_dataset").toUri().toString();
     String tableName = "lance.default.`" + datasetPath + "`";
-    spark.range(0, 100).toDF("id")
-        .repartition(4)
-        .writeTo(tableName)
-        .create();
+    spark.range(0, 100).toDF("id").repartition(4).writeTo(tableName).create();
 
     Dataset<Row> lanceDataset = spark.table(tableName);
     lanceDataset.selectExpr("count(*)").explain(true);
@@ -79,7 +77,8 @@ public class AggregatePushDownTest {
     String tableName = "lance.default.`" + datasetPath + "`";
 
     // Create test data using catalog table
-    spark.range(0, 100)
+    spark
+        .range(0, 100)
         .selectExpr("id", "id % 10 as category", "id * 2 as value")
         .repartition(4)
         .writeTo(tableName)
@@ -107,7 +106,8 @@ public class AggregatePushDownTest {
     String tableName = "lance.default.`" + datasetPath + "`";
 
     // Create test data using catalog table
-    spark.range(1, 101)
+    spark
+        .range(1, 101)
         .selectExpr("id", "id * 10 as value")
         .repartition(4)
         .writeTo(tableName)
@@ -133,15 +133,17 @@ public class AggregatePushDownTest {
     String tableName = "lance.default.`" + datasetPath + "`";
 
     // Create test data with some nulls
-    spark.createDataFrame(Arrays.asList(
-        RowFactory.create(1L, "a"),
-        RowFactory.create(2L, null),
-        RowFactory.create(3L, "c"),
-        RowFactory.create(4L, null),
-        RowFactory.create(5L, "e")
-    ), new StructType()
-        .add("id", org.apache.spark.sql.types.DataTypes.LongType)
-        .add("name", org.apache.spark.sql.types.DataTypes.StringType))
+    spark
+        .createDataFrame(
+            Arrays.asList(
+                RowFactory.create(1L, "a"),
+                RowFactory.create(2L, null),
+                RowFactory.create(3L, "c"),
+                RowFactory.create(4L, null),
+                RowFactory.create(5L, "e")),
+            new StructType()
+                .add("id", org.apache.spark.sql.types.DataTypes.LongType)
+                .add("name", org.apache.spark.sql.types.DataTypes.StringType))
         .writeTo(tableName)
         .create();
 
@@ -168,15 +170,17 @@ public class AggregatePushDownTest {
     String tableName = "lance.default.`" + datasetPath + "`";
 
     // Create test data with duplicates
-    spark.createDataFrame(Arrays.asList(
-        RowFactory.create(1L, "a"),
-        RowFactory.create(2L, "b"),
-        RowFactory.create(3L, "a"),
-        RowFactory.create(4L, "b"),
-        RowFactory.create(5L, "c")
-    ), new StructType()
-        .add("id", org.apache.spark.sql.types.DataTypes.LongType)
-        .add("category", org.apache.spark.sql.types.DataTypes.StringType))
+    spark
+        .createDataFrame(
+            Arrays.asList(
+                RowFactory.create(1L, "a"),
+                RowFactory.create(2L, "b"),
+                RowFactory.create(3L, "a"),
+                RowFactory.create(4L, "b"),
+                RowFactory.create(5L, "c")),
+            new StructType()
+                .add("id", org.apache.spark.sql.types.DataTypes.LongType)
+                .add("category", org.apache.spark.sql.types.DataTypes.StringType))
         .writeTo(tableName)
         .create();
 

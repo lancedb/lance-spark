@@ -13,21 +13,18 @@
  */
 package com.lancedb.lance.spark.read;
 
-import com.google.common.collect.Lists;
 import com.lancedb.lance.Dataset;
-import com.lancedb.lance.Fragment;
 import com.lancedb.lance.ReadOptions;
 import com.lancedb.lance.ipc.LanceScanner;
 import com.lancedb.lance.ipc.ScanOptions;
 import com.lancedb.lance.spark.SparkOptions;
 import com.lancedb.lance.spark.internal.LanceDatasetAdapter;
 
+import com.google.common.collect.Lists;
 import org.apache.arrow.memory.BufferAllocator;
 import org.apache.arrow.vector.BigIntVector;
 import org.apache.arrow.vector.VectorSchemaRoot;
 import org.apache.arrow.vector.ipc.ArrowReader;
-import org.apache.spark.sql.connector.expressions.aggregate.AggregateFunc;
-import org.apache.spark.sql.connector.expressions.aggregate.CountStar;
 import org.apache.spark.sql.connector.read.PartitionReader;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.LanceArrowUtils;
@@ -95,8 +92,9 @@ public class LanceCountStarPartitionReader implements PartitionReader<ColumnarBa
   }
 
   private ColumnarBatch createCountResultBatch(long count, StructType resultSchema) {
-    VectorSchemaRoot root = VectorSchemaRoot.create(
-        LanceArrowUtils.toArrowSchema(resultSchema, "UTC", false, false), allocator);
+    VectorSchemaRoot root =
+        VectorSchemaRoot.create(
+            LanceArrowUtils.toArrowSchema(resultSchema, "UTC", false, false), allocator);
 
     root.allocateNew();
     BigIntVector countVector = (BigIntVector) root.getVector("count");
@@ -113,10 +111,10 @@ public class LanceCountStarPartitionReader implements PartitionReader<ColumnarBa
 
   @Override
   public ColumnarBatch get() {
-      long rowCount = computeCount();
-      StructType countSchema = new StructType()
-          .add("count", org.apache.spark.sql.types.DataTypes.LongType);
-      return createCountResultBatch(rowCount, countSchema);
+    long rowCount = computeCount();
+    StructType countSchema =
+        new StructType().add("count", org.apache.spark.sql.types.DataTypes.LongType);
+    return createCountResultBatch(rowCount, countSchema);
   }
 
   @Override

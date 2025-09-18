@@ -102,8 +102,7 @@ public class LanceScan
   @Override
   public StructType readSchema() {
     if (pushedAggregation.isPresent()) {
-      return new StructType()
-          .add("count", org.apache.spark.sql.types.DataTypes.LongType);
+      return new StructType().add("count", org.apache.spark.sql.types.DataTypes.LongType);
     }
     return schema;
   }
@@ -143,7 +142,8 @@ public class LanceScan
 
       LanceInputPartition lancePartition = (LanceInputPartition) partition;
       if (lancePartition.getPushedAggregation().isPresent()) {
-        AggregateFunc[] aggFunc = lancePartition.getPushedAggregation().get().aggregateExpressions();
+        AggregateFunc[] aggFunc =
+            lancePartition.getPushedAggregation().get().aggregateExpressions();
         if (aggFunc.length == 1 && aggFunc[0] instanceof CountStar) {
           return new LanceCountStarPartitionReader(lancePartition);
         }
