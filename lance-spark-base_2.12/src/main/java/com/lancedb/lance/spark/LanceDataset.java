@@ -15,6 +15,7 @@ package com.lancedb.lance.spark;
 
 import com.lancedb.lance.spark.read.LanceScanBuilder;
 import com.lancedb.lance.spark.utils.BlobUtils;
+import com.lancedb.lance.spark.write.AddColumnsBackfillWrite;
 import com.lancedb.lance.spark.write.SparkWrite;
 
 import com.google.common.collect.ImmutableSet;
@@ -33,8 +34,10 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /** Lance Spark Dataset. */
 public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetadataColumns {
@@ -42,52 +45,57 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
       ImmutableSet.of(
           TableCapability.BATCH_READ, TableCapability.BATCH_WRITE, TableCapability.TRUNCATE);
 
-  public static final MetadataColumn[] METADATA_COLUMNS =
-      new MetadataColumn[] {
-        new MetadataColumn() {
-          @Override
-          public String name() {
-            return LanceConstant.FRAGMENT_ID;
-          }
+  public static final MetadataColumn FRAGMENT_ID_COLUMN =
+      new MetadataColumn() {
+        @Override
+        public String name() {
+          return LanceConstant.FRAGMENT_ID;
+        }
 
-          @Override
-          public DataType dataType() {
-            return DataTypes.IntegerType;
-          }
+        @Override
+        public DataType dataType() {
+          return DataTypes.IntegerType;
+        }
 
-          @Override
-          public boolean isNullable() {
-            return false;
-          }
-        },
-        new MetadataColumn() {
-          @Override
-          public String name() {
-            return LanceConstant.ROW_ID;
-          }
-
-          @Override
-          public DataType dataType() {
-            return DataTypes.LongType;
-          }
-        },
-        new MetadataColumn() {
-          @Override
-          public String name() {
-            return LanceConstant.ROW_ADDRESS;
-          }
-
-          @Override
-          public DataType dataType() {
-            return DataTypes.LongType;
-          }
-
-          @Override
-          public boolean isNullable() {
-            return false;
-          }
-        },
+        @Override
+        public boolean isNullable() {
+          return false;
+        }
       };
+
+  public static final MetadataColumn ROW_ID_COLUMN =
+      new MetadataColumn() {
+        @Override
+        public String name() {
+          return LanceConstant.ROW_ID;
+        }
+
+        @Override
+        public DataType dataType() {
+          return DataTypes.LongType;
+        }
+      };
+
+  public static final MetadataColumn ROW_ADDRESS_COLUMN =
+      new MetadataColumn() {
+        @Override
+        public String name() {
+          return LanceConstant.ROW_ADDRESS;
+        }
+
+        @Override
+        public DataType dataType() {
+          return DataTypes.LongType;
+        }
+
+        @Override
+        public boolean isNullable() {
+          return false;
+        }
+      };
+
+  public static final MetadataColumn[] METADATA_COLUMNS =
+      new MetadataColumn[] {ROW_ID_COLUMN, ROW_ADDRESS_COLUMN, FRAGMENT_ID_COLUMN};
 
   LanceConfig config;
   protected final StructType sparkSchema;
@@ -129,6 +137,20 @@ public class LanceDataset implements SupportsRead, SupportsWrite, SupportsMetada
 
   @Override
   public WriteBuilder newWriteBuilder(LogicalWriteInfo logicalWriteInfo) {
+    List<String> backfillColumns =
+        Arrays.stream(
+                logicalWriteInfo
+                    .options()
+                    .getOrDefault(LanceConstant.BACKFILL_COLUMNS_KEY, "")
+                    .split(","))
+            .map(String::trim)
+            .filter(t -> !t.isEmpty())
+            .collect(Collectors.toList());
+    if (!backfillColumns.isEmpty()) {
+      return new AddColumnsBackfillWrite.AddColumnsWriteBuilder(
+          sparkSchema, config, backfillColumns);
+    }
+
     return new SparkWrite.SparkWriteBuilder(sparkSchema, config);
   }
 

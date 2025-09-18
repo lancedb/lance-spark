@@ -81,6 +81,7 @@ object LanceArrowWriter {
       case (ShortType, vector: SmallIntVector) => new ShortWriter(vector)
       case (IntegerType, vector: IntVector) => new IntegerWriter(vector)
       case (LongType, vector: BigIntVector) => new LongWriter(vector)
+      case (LongType, vector: UInt8Vector) => new UnsignedLongWriter(vector)
       case (FloatType, vector: Float4Vector) => new FloatWriter(vector)
       case (DoubleType, vector: Float8Vector) => new DoubleWriter(vector)
       case (dt: DecimalType, vector: DecimalVector) =>
@@ -150,6 +151,8 @@ class LanceArrowWriter(root: VectorSchemaRoot, fields: Array[LanceArrowFieldWrit
     fields.foreach(_.reset())
     root.setRowCount(0)
   }
+
+  def field(index: Int): LanceArrowFieldWriter = fields(index)
 }
 
 /**
@@ -227,6 +230,14 @@ private[arrow] class IntegerWriter(val valueVector: IntVector) extends LanceArro
 }
 
 private[arrow] class LongWriter(val valueVector: BigIntVector) extends LanceArrowFieldWriter {
+  override def setNull(): Unit = {}
+  override def setValue(input: SpecializedGetters, ordinal: Int): Unit = {
+    valueVector.setSafe(count, input.getLong(ordinal))
+  }
+}
+
+private[arrow] class UnsignedLongWriter(val valueVector: UInt8Vector)
+  extends LanceArrowFieldWriter {
   override def setNull(): Unit = {}
   override def setValue(input: SpecializedGetters, ordinal: Int): Unit = {
     valueVector.setSafe(count, input.getLong(ordinal))

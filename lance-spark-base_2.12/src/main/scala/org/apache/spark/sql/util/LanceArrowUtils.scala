@@ -130,7 +130,9 @@ object LanceArrowUtils {
       }
 
       implicit val formats: Formats = DefaultFormats
-      meta = metadata.jsonValue.extract[Map[String, String]]
+      meta = metadata.jsonValue.extract[Map[String, Object]].map { case (k, v) =>
+        (k, String.valueOf(v))
+      }
     }
 
     dt match {
@@ -196,7 +198,8 @@ object LanceArrowUtils {
     case ByteType => new ArrowType.Int(8, true)
     case ShortType => new ArrowType.Int(8 * 2, true)
     case IntegerType => new ArrowType.Int(8 * 4, true)
-    case LongType if name.equals(LanceConstant.ROW_ID) => new ArrowType.Int(8 * 8, false)
+    case LongType if name.equals(LanceConstant.ROW_ID) || name.equals(LanceConstant.ROW_ADDRESS) =>
+      new ArrowType.Int(8 * 8, false)
     case LongType => new ArrowType.Int(8 * 8, true)
     case FloatType => new ArrowType.FloatingPoint(FloatingPointPrecision.SINGLE)
     case DoubleType => new ArrowType.FloatingPoint(FloatingPointPrecision.DOUBLE)

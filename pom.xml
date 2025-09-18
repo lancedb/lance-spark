@@ -51,8 +51,10 @@
 
     <properties>
         <lance-spark.version>0.0.14</lance-spark.version>
-        <lance.version>0.35.0</lance.version>
+        <lance.version>0.37.0</lance.version>
         <lance-namespace.version>0.0.19</lance-namespace.version>
+
+        <antlr4.version>4.9.3</antlr4.version>
 
         <spark34.version>3.4.4</spark34.version>
         <spark35.version>3.5.5</spark35.version>
@@ -370,6 +372,11 @@
                             <arg>target/headers</arg>
                         </compilerArgs>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr4-maven-plugin</artifactId>
+                    <version>${antlr4.version}</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-jar-plugin</artifactId>

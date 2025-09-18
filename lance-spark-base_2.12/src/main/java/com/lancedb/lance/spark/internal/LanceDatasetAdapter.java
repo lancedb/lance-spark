@@ -13,7 +13,14 @@
  */
 package com.lancedb.lance.spark.internal;
 
-import com.lancedb.lance.*;
+import com.lancedb.lance.Dataset;
+import com.lancedb.lance.Fragment;
+import com.lancedb.lance.FragmentMetadata;
+import com.lancedb.lance.FragmentOperation;
+import com.lancedb.lance.ReadOptions;
+import com.lancedb.lance.WriteParams;
+import com.lancedb.lance.fragment.FragmentMergeResult;
+import com.lancedb.lance.operation.Merge;
 import com.lancedb.lance.operation.Update;
 import com.lancedb.lance.spark.LanceConfig;
 import com.lancedb.lance.spark.SparkOptions;
@@ -87,6 +94,14 @@ public class LanceDatasetAdapter {
     }
   }
 
+  public static List<FragmentMetadata> getFragments(LanceConfig config) {
+    String uri = config.getDatasetUri();
+    ReadOptions options = SparkOptions.genReadOptionFromConfig(config);
+    try (Dataset dataset = Dataset.open(allocator, uri, options)) {
+      return dataset.getFragments().stream().map(Fragment::metadata).collect(Collectors.toList());
+    }
+  }
+
   public static LanceFragmentScanner getFragmentScanner(
       int fragmentId, LanceInputPartition inputPartition) {
     return LanceFragmentScanner.create(fragmentId, inputPartition);
@@ -141,6 +156,29 @@ public class LanceDatasetAdapter {
               .build();
 
       dataset.newTransactionBuilder().operation(update).build().commit();
+    }
+  }
+
+  public static void mergeFragments(
+      LanceConfig config, List<FragmentMetadata> fragments, Schema schema) {
+    String uri = config.getDatasetUri();
+    ReadOptions options = SparkOptions.genReadOptionFromConfig(config);
+    try (Dataset dataset = Dataset.open(allocator, uri, options)) {
+      dataset
+          .newTransactionBuilder()
+          .operation(Merge.builder().fragments(fragments).schema(schema).build())
+          .build()
+          .commit();
+    }
+  }
+
+  public static FragmentMergeResult mergeFragmentColumn(
+      LanceConfig config, int fragmentId, ArrowArrayStream stream, String leftOn, String rightOn) {
+    String uri = config.getDatasetUri();
+    ReadOptions options = SparkOptions.genReadOptionFromConfig(config);
+    try (Dataset dataset = Dataset.open(allocator, uri, options)) {
+      Fragment fragment = dataset.getFragment(fragmentId);
+      return fragment.mergeColumns(stream, leftOn, rightOn);
     }
   }
 
