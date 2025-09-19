@@ -28,7 +28,7 @@ import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AggregatePushDownTest {
+public abstract class BaseSparkConnectorAggPushdownTest {
   private static SparkSession spark;
 
   @TempDir static Path tempDir;
