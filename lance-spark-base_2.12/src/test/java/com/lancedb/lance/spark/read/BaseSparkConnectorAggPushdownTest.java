@@ -42,7 +42,7 @@ public abstract class BaseSparkConnectorAggPushdownTest {
             .config("spark.ui.enabled", "false")
             .config("spark.sql.catalog.lance", "com.lancedb.lance.spark.LanceNamespaceSparkCatalog")
             .config("spark.sql.catalog.lance.impl", "dir")
-            .config("spark.sql.catalog.lance.path", tempDir.toString())
+            .config("spark.sql.catalog.lance.root", tempDir.toString())
             .getOrCreate();
   }
 
@@ -54,9 +54,8 @@ public abstract class BaseSparkConnectorAggPushdownTest {
   }
 
   @Test
-  public void testCountStarPushDown() {
-    String datasetPath = tempDir.resolve("count_test_dataset").toUri().toString();
-    String tableName = "lance.default.`" + datasetPath + "`";
+  public void testCountStarPushDown() throws Exception {
+    String tableName = "lance.default.count_test_dataset";
     spark.range(0, 100).toDF("id").repartition(4).writeTo(tableName).create();
 
     Dataset<Row> lanceDataset = spark.table(tableName);
@@ -67,14 +66,11 @@ public abstract class BaseSparkConnectorAggPushdownTest {
     long count = lanceDataset.count();
     assertEquals(100L, countFromSelectExpr, "Count(*) should return 100");
     assertEquals(100L, count, "Count should return 100 rows");
-
-    spark.sql("DROP TABLE IF EXISTS " + tableName);
   }
 
   @Test
-  public void testCountStarWithFilter() {
-    String datasetPath = tempDir.resolve("count_filter_test_dataset").toUri().toString();
-    String tableName = "lance.default.`" + datasetPath + "`";
+  public void testCountStarWithFilter() throws Exception {
+    String tableName = "lance.default.count_filter_test_dataset";
 
     // Create test data using catalog table
     spark
@@ -95,15 +91,11 @@ public abstract class BaseSparkConnectorAggPushdownTest {
     // value < 150 means id < 75 (since value = id * 2)
     // Each category has 7 values < 75, so 4 * 7 = 28
     assertEquals(28, complexFilteredCount, "Complex filtered count should return 28 rows");
-
-    // Cleanup
-    spark.sql("DROP TABLE IF EXISTS " + tableName);
   }
 
   @Test
-  public void testMultipleAggregates() {
-    String datasetPath = tempDir.resolve("multiple_agg_test_dataset").toUri().toString();
-    String tableName = "lance.default.`" + datasetPath + "`";
+  public void testMultipleAggregates() throws Exception {
+    String tableName = "lance.default.multiple_agg_test_dataset";
 
     // Create test data using catalog table
     spark
@@ -122,15 +114,11 @@ public abstract class BaseSparkConnectorAggPushdownTest {
     assertEquals(100L, result.getLong(0), "Count should be 100");
     assertEquals(50500L, result.getLong(1), "Sum should be 50500");
     assertEquals(505.0, result.getDouble(2), 0.001, "Average should be 505");
-
-    // Cleanup
-    spark.sql("DROP TABLE IF EXISTS " + tableName);
   }
 
   @Test
-  public void testCountColumnNotPushedDown() {
-    String datasetPath = tempDir.resolve("count_column_test_dataset").toUri().toString();
-    String tableName = "lance.default.`" + datasetPath + "`";
+  public void testCountColumnNotPushedDown() throws Exception {
+    String tableName = "lance.default.count_column_test_dataset";
 
     // Create test data with some nulls
     spark
@@ -159,15 +147,11 @@ public abstract class BaseSparkConnectorAggPushdownTest {
     // COUNT(*) should still be pushed down
     long countStar = lanceDataset.selectExpr("count(*)").first().getLong(0);
     assertEquals(5L, countStar, "Count(*) should be 5");
-
-    // Cleanup
-    spark.sql("DROP TABLE IF EXISTS " + tableName);
   }
 
   @Test
-  public void testCountDistinctNotPushedDown() {
-    String datasetPath = tempDir.resolve("count_distinct_test_dataset").toUri().toString();
-    String tableName = "lance.default.`" + datasetPath + "`";
+  public void testCountDistinctNotPushedDown() throws Exception {
+    String tableName = "lance.default.count_distinct_test_dataset";
 
     // Create test data with duplicates
     spark
@@ -192,8 +176,5 @@ public abstract class BaseSparkConnectorAggPushdownTest {
     // COUNT(DISTINCT column) should not be pushed down
     long countDistinct = lanceDataset.selectExpr("count(distinct category)").first().getLong(0);
     assertEquals(3L, countDistinct, "Count(distinct category) should be 3");
-
-    // Cleanup
-    spark.sql("DROP TABLE IF EXISTS " + tableName);
   }
 }

@@ -76,6 +76,7 @@
                             <sources>
                                 <source>../lance-spark-base_2.12/src/main/java</source>
                                 <source>../lance-spark-3.5_2.12/src/main/java</source>
+                                <source>src/main/java</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -118,6 +119,14 @@
                     <args>
                         <arg>-feature</arg>
                     </args>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <release>17</release>
                 </configuration>
             </plugin>
             <plugin>

@@ -71,6 +71,7 @@
                             <sources>
                                 <source>../lance-spark-base_2.12/src/main/java</source>
                                 <source>src/main/java</source>
+                                <source>src/main/java11</source>
                             </sources>
                         </configuration>
                     </execution>
