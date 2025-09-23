@@ -23,7 +23,11 @@ import org.apache.spark.sql.connector.expressions.FieldReference;
 import org.apache.spark.sql.connector.expressions.NullOrdering;
 import org.apache.spark.sql.connector.expressions.SortDirection;
 import org.apache.spark.sql.connector.expressions.SortOrder;
+import org.apache.spark.sql.connector.expressions.aggregate.AggregateFunc;
+import org.apache.spark.sql.connector.expressions.aggregate.Aggregation;
+import org.apache.spark.sql.connector.expressions.aggregate.CountStar;
 import org.apache.spark.sql.connector.read.Scan;
+import org.apache.spark.sql.connector.read.SupportsPushDownAggregates;
 import org.apache.spark.sql.connector.read.SupportsPushDownFilters;
 import org.apache.spark.sql.connector.read.SupportsPushDownLimit;
 import org.apache.spark.sql.connector.read.SupportsPushDownOffset;
@@ -40,7 +44,8 @@ public class LanceScanBuilder
         SupportsPushDownFilters,
         SupportsPushDownLimit,
         SupportsPushDownOffset,
-        SupportsPushDownTopN {
+        SupportsPushDownTopN,
+        SupportsPushDownAggregates {
   private final LanceConfig config;
   private StructType schema;
 
@@ -48,6 +53,7 @@ public class LanceScanBuilder
   private Optional<Integer> limit = Optional.empty();
   private Optional<Integer> offset = Optional.empty();
   private Optional<List<ColumnOrdering>> topNSortOrders = Optional.empty();
+  private Optional<Aggregation> pushedAggregation = Optional.empty();
 
   public LanceScanBuilder(StructType schema, LanceConfig config) {
     this.schema = schema;
@@ -57,7 +63,8 @@ public class LanceScanBuilder
   @Override
   public Scan build() {
     Optional<String> whereCondition = FilterPushDown.compileFiltersToSqlWhereClause(pushedFilters);
-    return new LanceScan(schema, config, whereCondition, limit, offset, topNSortOrders);
+    return new LanceScan(
+        schema, config, whereCondition, limit, offset, topNSortOrders, pushedAggregation);
   }
 
   @Override
@@ -127,5 +134,19 @@ public class LanceScanBuilder
     }
     this.topNSortOrders = Optional.of(topNSortOrders);
     return true;
+  }
+
+  @Override
+  public boolean pushAggregation(Aggregation aggregation) {
+    AggregateFunc[] funcs = aggregation.aggregateExpressions();
+    if (aggregation.groupByExpressions().length > 0) {
+      return false;
+    }
+    if (funcs.length == 1 && funcs[0] instanceof CountStar) {
+      this.pushedAggregation = Optional.of(aggregation);
+      return true;
+    }
+
+    return false;
   }
 }

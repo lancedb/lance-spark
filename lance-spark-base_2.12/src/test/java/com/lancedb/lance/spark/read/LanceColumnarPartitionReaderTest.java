@@ -76,6 +76,7 @@ public class LanceColumnarPartitionReaderTest {
             Optional.of(1),
             Optional.of(1),
             Optional.empty(),
+            Optional.empty(), // pushedAggregation
             "testOffsetAndLimit");
     try (LanceColumnarPartitionReader reader = new LanceColumnarPartitionReader(partition)) {
       List<List<Long>> expectedValues = TestUtils.TestTable1Config.expectedValues;
@@ -116,6 +117,7 @@ public class LanceColumnarPartitionReaderTest {
             Optional.of(1),
             Optional.empty(),
             Optional.of(Collections.singletonList(builder.build())),
+            Optional.empty(), // pushedAggregation
             "testTopN");
     try (LanceColumnarPartitionReader reader = new LanceColumnarPartitionReader(partition)) {
       List<List<Long>> expectedValues = TestUtils.TestTable1Config.expectedValues;
