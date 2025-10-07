@@ -59,11 +59,17 @@ public class LanceFragmentScanner implements AutoCloseable {
   private final LanceScanner scanner;
   private final int fragmentId;
   private final boolean withFragemtId;
+  private final LanceInputPartition inputPartition;
 
-  private LanceFragmentScanner(LanceScanner scanner, int fragmentId, boolean withFragmentId) {
+  private LanceFragmentScanner(
+      LanceScanner scanner,
+      int fragmentId,
+      boolean withFragmentId,
+      LanceInputPartition inputPartition) {
     this.scanner = scanner;
     this.fragmentId = fragmentId;
     this.withFragemtId = withFragmentId;
+    this.inputPartition = inputPartition;
   }
 
   public static LanceFragmentScanner create(int fragmentId, LanceInputPartition inputPartition) {
@@ -92,7 +98,7 @@ public class LanceFragmentScanner implements AutoCloseable {
       boolean withFragmentId =
           inputPartition.getSchema().getFieldIndex(LanceConstant.FRAGMENT_ID).nonEmpty();
       return new LanceFragmentScanner(
-          fragment.newScan(scanOptions.build()), fragmentId, withFragmentId);
+          fragment.newScan(scanOptions.build()), fragmentId, withFragmentId, inputPartition);
     } catch (Throwable throwable) {
       throw new RuntimeException(throwable);
     }
@@ -122,6 +128,10 @@ public class LanceFragmentScanner implements AutoCloseable {
     return withFragemtId;
   }
 
+  public LanceInputPartition getInputPartition() {
+    return inputPartition;
+  }
+
   private static List<String> getColumnNames(StructType schema) {
     return Arrays.stream(schema.fields())
         .map(StructField::name)
@@ -129,7 +139,9 @@ public class LanceFragmentScanner implements AutoCloseable {
             name ->
                 !name.equals(LanceConstant.FRAGMENT_ID)
                     && !name.equals(LanceConstant.ROW_ID)
-                    && !name.equals(LanceConstant.ROW_ADDRESS))
+                    && !name.equals(LanceConstant.ROW_ADDRESS)
+                    && !name.endsWith(LanceConstant.BLOB_POSITION_SUFFIX)
+                    && !name.endsWith(LanceConstant.BLOB_SIZE_SUFFIX))
         .collect(Collectors.toList());
   }
 

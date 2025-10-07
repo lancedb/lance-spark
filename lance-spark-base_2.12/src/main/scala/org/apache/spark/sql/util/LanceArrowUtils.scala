@@ -24,6 +24,7 @@ package org.apache.spark.sql.util
  */
 
 import com.lancedb.lance.spark.LanceConstant
+import com.lancedb.lance.spark.utils.{BlobUtils, VectorUtils}
 
 import org.apache.arrow.vector.complex.MapVector
 import org.apache.arrow.vector.types.{DateUnit, FloatingPointPrecision, IntervalUnit, TimeUnit}
@@ -39,8 +40,8 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.collection.JavaConverters._
 
 object LanceArrowUtils {
-  val ARROW_FIXED_SIZE_LIST_SIZE_KEY = "arrow.fixed-size-list.size"
-  val ENCODING_BLOB = "lance-encoding:blob"
+  val ARROW_FIXED_SIZE_LIST_SIZE_KEY = VectorUtils.ARROW_FIXED_SIZE_LIST_SIZE_KEY
+  val ENCODING_BLOB = BlobUtils.LANCE_ENCODING_BLOB_KEY
 
   def fromArrowField(field: Field): DataType = {
     field.getType match {
@@ -56,6 +57,26 @@ object LanceArrowUtils {
         val elementType = fromArrowField(elementField)
         val containsNull = elementField.isNullable
         ArrayType(elementType, containsNull)
+      case struct: ArrowType.Struct =>
+        if (isBlobField(field)) {
+          // Lance returns blob columns as structs with position and size fields
+          // Keep it as a struct but handle unsigned Int64 fields
+          val fields = field.getChildren.asScala.map { childField =>
+            val childType = childField.getType match {
+              case int: ArrowType.Int if !int.getIsSigned && int.getBitWidth == 8 * 8 => LongType
+              case _ => fromArrowField(childField)
+            }
+            StructField(childField.getName, childType, childField.isNullable)
+          }.toArray
+          StructType(fields)
+        } else {
+          // Regular struct, use standard conversion
+          ArrowUtils.fromArrowField(field)
+        }
+      case largeBinary: ArrowType.LargeBinary if isBlobField(field) =>
+        // Lance returns LargeBinary in schema but Struct in data for blob columns
+        // We need to handle this as binary to match the schema
+        BinaryType
       case _ => ArrowUtils.fromArrowField(field)
     }
   }
@@ -239,10 +260,8 @@ object LanceArrowUtils {
   private def shouldBeFixedSizeList(
       metadata: org.apache.spark.sql.types.Metadata,
       elementType: DataType): Boolean = {
-    metadata != null &&
-    metadata.contains(ARROW_FIXED_SIZE_LIST_SIZE_KEY) &&
-    metadata.getLong(ARROW_FIXED_SIZE_LIST_SIZE_KEY) > 0 &&
-    (elementType == FloatType || elementType == DoubleType)
+    // Create a temporary ArrayType to use VectorUtils.shouldBeFixedSizeList
+    VectorUtils.shouldBeFixedSizeList(ArrayType(elementType, true), metadata)
   }
 
   /* Copy from copy of org.apache.spark.sql.errors.ExecutionErrors for Spark version compatibility */
@@ -258,5 +277,11 @@ object LanceArrowUtils {
     new SparkUnsupportedOperationException(
       errorClass = "DUPLICATED_FIELD_NAME_IN_ARROW_STRUCT",
       messageParameters = Map("fieldNames" -> fieldNames.mkString("[", ", ", "]")))
+  }
+
+  private def isBlobField(field: Field): Boolean = {
+    val metadata = field.getMetadata
+    metadata != null && metadata.containsKey(ENCODING_BLOB) &&
+    "true".equalsIgnoreCase(metadata.get(ENCODING_BLOB))
   }
 }
