@@ -327,7 +327,9 @@ public abstract class BaseBlobCreateTableTest {
 
     Dataset<Row> df = spark.createDataFrame(rows, schema);
     try {
-      df.writeTo(catalogName + ".default." + tableName).append();
+      // Use coalesce(1) to write all data to a single partition/file
+      // This ensures all blobs are in the same blob file with sequential positions
+      df.coalesce(1).writeTo(catalogName + ".default." + tableName).append();
     } catch (Exception e) {
       fail("Failed to append data to table: " + e.getMessage());
     }
@@ -348,6 +350,10 @@ public abstract class BaseBlobCreateTableTest {
     List<Row> resultRows = result.collectAsList();
     assertEquals(5, resultRows.size());
 
+    // Track all positions to verify they are all covered
+    java.util.Set<Long> positions = new java.util.HashSet<>();
+    int positionCount = 0;
+
     // Verify blob data and virtual columns
     for (Row row : resultRows) {
       // Verify blob data is returned as empty byte array (not materialized)
@@ -366,7 +372,15 @@ public abstract class BaseBlobCreateTableTest {
 
       // Size should match the original data size (100KB)
       assertEquals(100000L, size, "Blob size should match original data size");
+
+      // Collect all positions to verify they all exist
+      positions.add(position);
+      positionCount++;
     }
+
+    // Verify all positions are covered (all rows have positions in the set)
+    assertEquals(5, positionCount, "All blob rows should have positions");
+    assertEquals(5, positions.size(), "All blob positions should be unique");
 
     // Clean up
     spark.sql("DROP TABLE IF EXISTS " + catalogName + ".default." + tableName);

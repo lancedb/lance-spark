@@ -40,9 +40,9 @@ Lance supports vector (embedding) columns for AI workloads. These columns are st
 
 - **Element Types**: `FLOAT` (float32), `DOUBLE` (float64)
 - **Requirements**:
-  - Vectors must be non-nullable
-  - All vectors in a column must have the same dimension
-  - Dimension is specified via table properties
+    - Vectors must be non-nullable
+    - All vectors in a column must have the same dimension
+    - Dimension is specified via table properties
 
 ### Creating Vector Columns
 
@@ -119,3 +119,68 @@ results = ds.to_table(
     nearest={"column": "embeddings", "q": query_vector, "k": 10}
 ).to_pandas()
 ```
+
+## Blob Columns
+
+Lance supports blob encoding for large binary data. Blob columns store large binary values (typically > 64KB) out-of-line in a separate blob file, which improves query performance when not accessing the blob data directly.
+
+### Supported Types
+
+- **Column Type**: `BINARY`
+- **Requirements**:
+    - Column must be nullable (blob data is not materialized when read, so nullability is required)
+    - Blob encoding is specified via table properties
+
+### Creating Blob Columns
+
+To create a table with blob columns, use the table property pattern `<column_name>.lance.encoding` with the value `'blob'`:
+
+```sql
+CREATE TABLE documents (\n    id INT NOT NULL,\n    title STRING,\n    content BINARY\n) USING lance\nTBLPROPERTIES (\n    'content.lance.encoding' = 'blob'\n);
+```
+
+Create table with multiple blob columns:
+
+```sql
+CREATE TABLE media_files (\n    id INT NOT NULL,\n    filename STRING,\n    image_data BINARY,\n    video_data BINARY\n) USING lance\nTBLPROPERTIES (\n    'image_data.lance.encoding' = 'blob',\n    'video_data.lance.encoding' = 'blob'\n);
+```
+
+### Working with Blob Tables
+
+Insert blob data using SQL or DataFrames:
+
+```sql
+-- Insert blob data (example with binary literals)
+INSERT INTO documents VALUES\n    (1, 'Document 1', X'48656C6C6F'),\n    (2, 'Document 2', X'576F726C64');
+```
+
+Query blob tables:
+
+```sql
+-- Select non-blob columns
+SELECT id, title FROM documents WHERE id = 1;
+
+-- Count rows
+SELECT COUNT(*) FROM documents;
+```
+
+**Note**: When reading blob columns, they are returned as empty byte arrays since the data is not materialized by default. To access the actual blob data, you need to use the blob position and size virtual columns.
+
+### Blob Virtual Columns
+
+When you have a blob column, Lance automatically provides virtual columns that give you access to the blob's position and size in the blob file:
+
+- `<column_name>__blob_pos` - The byte position of the blob in the blob file
+- `<column_name>__blob_size` - The size of the blob in bytes
+
+```sql
+-- Select blob metadata
+SELECT id, title, content__blob_pos, content__blob_size
+FROM documents
+WHERE id = 1;
+```
+
+These virtual columns can be used to:
+- Verify that blob data was written successfully
+- Implement custom blob retrieval logic
+- Monitor blob storage statistics
