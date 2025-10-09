@@ -34,7 +34,7 @@ public class LanceArrowWriter extends ArrowReader {
   private final int batchSize;
 
   @GuardedBy("monitor")
-  private volatile boolean finished;
+  private volatile boolean finished = false;
 
   private final AtomicLong totalBytesRead = new AtomicLong();
   private com.lancedb.lance.spark.arrow.LanceArrowWriter arrowWriter = null;
@@ -70,8 +70,8 @@ public class LanceArrowWriter extends ArrowReader {
   }
 
   void setFinished() {
-    loadToken.release();
     finished = true;
+    loadToken.release();
   }
 
   @Override
