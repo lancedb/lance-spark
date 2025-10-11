@@ -32,6 +32,18 @@
             <version>${lance-spark.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4</artifactId>
+            <version>${antlr4.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>${antlr4.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.lancedb</groupId>
             <artifactId>lance-spark-base_${scala.compat.version}</artifactId>
             <version>${lance-spark.version}</version>
@@ -57,6 +69,22 @@
         </testResources>
         <plugins>
             <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <visitor>true</visitor>
+                    <listener>true</listener>
+                    <sourceDirectory>../lance-spark-base_2.12/src/main/antlr4</sourceDirectory>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
                 <version>3.2.0</version>
@@ -72,6 +100,8 @@
                                 <source>../lance-spark-base_2.12/src/main/java</source>
                                 <source>src/main/java</source>
                                 <source>src/main/java11</source>
+                                <source>src/main/scala</source>
+                                <source>${project.build.directory}/generated-sources/antlr4</source>
                             </sources>
                         </configuration>
                     </execution>

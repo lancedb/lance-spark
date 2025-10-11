@@ -11,16 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.lancedb.lance.spark;
+package com.lancedb.lance.spark.update;
 
-public class LanceConstant {
-  public static final String FRAGMENT_ID = "_fragid";
-  public static final String ROW_ID = "_rowid";
-  public static final String ROW_ADDRESS = "_rowaddr";
-
-  // Blob metadata column suffixes
-  public static final String BLOB_POSITION_SUFFIX = "__blob_pos";
-  public static final String BLOB_SIZE_SUFFIX = "__blob_size";
-
-  public static final String BACKFILL_COLUMNS_KEY = "backfill_columns";
+public class AddColumnsBackfillTest extends BaseAddColumnsBackfillTest {
+  // All test methods are inherited from BaseAddColumnsBackfillTest
 }
