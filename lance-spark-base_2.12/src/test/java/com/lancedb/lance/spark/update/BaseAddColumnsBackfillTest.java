@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,7 @@ public abstract class BaseAddColumnsBackfillTest {
   @TempDir Path tempDir;
 
   @BeforeEach
-  public void setup() {
+  public void setup() throws IOException {
     spark =
         SparkSession.builder()
             .appName("dataframe-addcolumn-test")
@@ -62,7 +63,7 @@ public abstract class BaseAddColumnsBackfillTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  public void tearDown() throws IOException {
     if (spark != null) {
       spark.close();
     }
