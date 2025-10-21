@@ -20,7 +20,7 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog._
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 
-case class ExtendedDataSourceV2Strategy(session: SparkSession) extends SparkStrategy
+case class LanceDataSourceV2Strategy(session: SparkSession) extends SparkStrategy
   with PredicateHelper {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {

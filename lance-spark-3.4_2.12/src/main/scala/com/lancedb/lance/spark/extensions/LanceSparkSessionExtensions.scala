@@ -15,7 +15,7 @@ package com.lancedb.lance.spark.extensions
 
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.parser.extensions.LanceSparkSqlExtensionsParser
-import org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Strategy
+import org.apache.spark.sql.execution.datasources.v2.LanceDataSourceV2Strategy
 
 class LanceSparkSessionExtensions extends (SparkSessionExtensions => Unit) {
 
@@ -23,6 +23,6 @@ class LanceSparkSessionExtensions extends (SparkSessionExtensions => Unit) {
     // parser extensions
     extensions.injectParser { case (_, parser) => new LanceSparkSqlExtensionsParser(parser) }
 
-    extensions.injectPlannerStrategy(ExtendedDataSourceV2Strategy(_))
+    extensions.injectPlannerStrategy(LanceDataSourceV2Strategy(_))
   }
 }
