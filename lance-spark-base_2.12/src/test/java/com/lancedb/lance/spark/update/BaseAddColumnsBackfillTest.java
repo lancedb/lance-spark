@@ -63,7 +63,7 @@ public abstract class BaseAddColumnsBackfillTest {
     }
   }
 
-  private void prepareDataset() {
+  protected void prepareDataset() {
     spark.sql(String.format("create table %s (id int, text string) using lance;", fullTable));
     spark.sql(
         String.format(
@@ -155,28 +155,6 @@ public abstract class BaseAddColumnsBackfillTest {
         "[[0,new_col_1_0,text_0], [1,new_col_1_1,text_1], [2,null,text_2], [3,null,text_3], [4,new_col_1_4,text_4], [5,null,text_5], [6,null,text_6], [7,null,text_7], [8,new_col_1_8,text_8], [9,new_col_1_9,text_9]]",
         spark
             .sql(String.format("select id, new_col1, text from %s", fullTable))
-            .collectAsList()
-            .toString());
-  }
-
-  @Test
-  public void testAddOnDeletedRows() {
-    prepareDataset();
-
-    // Delete some rows
-    spark.sql(String.format("delete from %s where id in (0, 1, 4, 8, 9);", fullTable));
-
-    spark.sql(
-        String.format(
-            "create temporary view tmp_view as select _rowaddr, _fragid, id * 100 as new_col1, id * 2 as new_col2, id * 3 as new_col3 from %s;",
-            fullTable));
-    spark.sql(
-        String.format("alter table %s add columns new_col1, new_col2 from tmp_view", fullTable));
-
-    Assertions.assertEquals(
-        "[[2,200,4,text_2], [3,300,6,text_3], [5,500,10,text_5], [6,600,12,text_6], [7,700,14,text_7]]",
-        spark
-            .sql(String.format("select id, new_col1, new_col2, text from %s", fullTable))
             .collectAsList()
             .toString());
   }
