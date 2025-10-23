@@ -15,12 +15,8 @@ package com.lancedb.lance.spark.update;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.functions;
-import org.apache.spark.sql.types.DataTypes;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,8 +25,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -69,25 +63,21 @@ public abstract class BaseAddColumnsBackfillTest {
     }
   }
 
+  private void prepareDataset() {
+    spark.sql(String.format("create table %s (id int, text string) using lance;", fullTable));
+    spark.sql(
+        String.format(
+            "insert into %s (id, text) values %s ;",
+            fullTable,
+            IntStream.range(0, 10)
+                .boxed()
+                .map(i -> String.format("(%d, 'text_%d')", i, i))
+                .collect(Collectors.joining(","))));
+  }
+
   @Test
   public void testWithDataFrame() {
-    StructType schema =
-        new StructType(
-            new StructField[] {
-              DataTypes.createStructField("id", DataTypes.IntegerType, false),
-              DataTypes.createStructField("text", DataTypes.StringType, true)
-            });
-
-    // Create test data
-    List<Row> rows = new ArrayList<>();
-    for (int i = 0; i < 10; i++) {
-      rows.add(RowFactory.create(i, "text_" + i));
-    }
-
-    Dataset<Row> df = spark.createDataFrame(rows, schema);
-
-    // Write to Lance table using DataFrame API
-    df.writeTo(fullTable).using("lance").createOrReplace();
+    prepareDataset();
 
     // Read back and verify
     Dataset<Row> result = spark.table(fullTable);
@@ -116,15 +106,7 @@ public abstract class BaseAddColumnsBackfillTest {
 
   @Test
   public void testWithSql() {
-    spark.sql(String.format("create table %s (id int, text string) using lance;", fullTable));
-    spark.sql(
-        String.format(
-            "insert into %s (id, text) values %s ;",
-            fullTable,
-            IntStream.range(0, 10)
-                .boxed()
-                .map(i -> String.format("(%d, 'text_%d')", i, i))
-                .collect(Collectors.joining(","))));
+    prepareDataset();
 
     spark.sql(
         String.format(
@@ -143,15 +125,7 @@ public abstract class BaseAddColumnsBackfillTest {
 
   @Test
   public void testAddExistedColumns() {
-    spark.sql(String.format("create table %s (id int, text string) using lance;", fullTable));
-    spark.sql(
-        String.format(
-            "insert into %s (id, text) values %s ;",
-            fullTable,
-            IntStream.range(0, 10)
-                .boxed()
-                .map(i -> String.format("(%d, 'text_%d')", i, i))
-                .collect(Collectors.joining(","))));
+    prepareDataset();
 
     spark.sql(
         String.format(
@@ -167,15 +141,7 @@ public abstract class BaseAddColumnsBackfillTest {
 
   @Test
   public void testAddRowsNotAligned() {
-    spark.sql(String.format("create table %s (id int, text string) using lance;", fullTable));
-    spark.sql(
-        String.format(
-            "insert into %s (id, text) values %s ;",
-            fullTable,
-            IntStream.range(0, 10)
-                .boxed()
-                .map(i -> String.format("(%d, 'text_%d')", i, i))
-                .collect(Collectors.joining(","))));
+    prepareDataset();
 
     // Add a new String column (which can be null)
     // New records are not aligned with existing records
@@ -189,6 +155,28 @@ public abstract class BaseAddColumnsBackfillTest {
         "[[0,new_col_1_0,text_0], [1,new_col_1_1,text_1], [2,null,text_2], [3,null,text_3], [4,new_col_1_4,text_4], [5,null,text_5], [6,null,text_6], [7,null,text_7], [8,new_col_1_8,text_8], [9,new_col_1_9,text_9]]",
         spark
             .sql(String.format("select id, new_col1, text from %s", fullTable))
+            .collectAsList()
+            .toString());
+  }
+
+  @Test
+  public void testAddOnDeletedRows() {
+    prepareDataset();
+
+    // Delete some rows
+    spark.sql(String.format("delete from %s where id in (0, 1, 4, 8, 9);", fullTable));
+
+    spark.sql(
+        String.format(
+            "create temporary view tmp_view as select _rowaddr, _fragid, id * 100 as new_col1, id * 2 as new_col2, id * 3 as new_col3 from %s;",
+            fullTable));
+    spark.sql(
+        String.format("alter table %s add columns new_col1, new_col2 from tmp_view", fullTable));
+
+    Assertions.assertEquals(
+        "[[2,200,4,text_2], [3,300,6,text_3], [5,500,10,text_5], [6,600,12,text_6], [7,700,14,text_7]]",
+        spark
+            .sql(String.format("select id, new_col1, new_col2, text from %s", fullTable))
             .collectAsList()
             .toString());
   }
