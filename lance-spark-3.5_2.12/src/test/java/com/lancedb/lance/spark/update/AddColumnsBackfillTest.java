@@ -20,7 +20,7 @@ public class AddColumnsBackfillTest extends BaseAddColumnsBackfillTest {
   // All test methods are inherited from BaseAddColumnsBackfillTest
 
   @Test
-  public void testAddOnDeletedRows() {
+  public void testWithDeletedRecords() {
     prepareDataset();
 
     // Delete some rows

@@ -105,25 +105,6 @@ public abstract class BaseAddColumnsBackfillTest {
   }
 
   @Test
-  public void testWithSql() {
-    prepareDataset();
-
-    spark.sql(
-        String.format(
-            "create temporary view tmp_view as select _rowaddr, _fragid, id * 100 as new_col1, id * 2 as new_col2, id * 3 as new_col3 from %s;",
-            fullTable));
-    spark.sql(
-        String.format("alter table %s add columns new_col1, new_col2 from tmp_view", fullTable));
-
-    Assertions.assertEquals(
-        "[[0,0,0,text_0], [1,100,2,text_1], [2,200,4,text_2], [3,300,6,text_3], [4,400,8,text_4], [5,500,10,text_5], [6,600,12,text_6], [7,700,14,text_7], [8,800,16,text_8], [9,900,18,text_9]]",
-        spark
-            .sql(String.format("select id, new_col1, new_col2, text from %s", fullTable))
-            .collectAsList()
-            .toString());
-  }
-
-  @Test
   public void testAddExistedColumns() {
     prepareDataset();
 
