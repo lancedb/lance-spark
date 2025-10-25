@@ -65,8 +65,8 @@ See [Configuration](config.md) for more details.
 
 | Java Version | Support Status | Notes                                                        |
 |--------------|----------------|--------------------------------------------------------------|
-| Java 8       | ✅ Supported    | Minimum required version                                     |
-| Java 11      | ✅ Supported    | Recommended for production                                   |
+| Java 8       | ❌ Not Supported | No longer supported                                         |
+| Java 11      | ✅ Supported    | Minimum required version                                     |
 | Java 17      | ✅ Supported    | Latest LTS version (Spark 4.0 dropped Java 8 and 11 support) |
 | Java 21+     | ⚠️ Untested    | May work but not officially tested                           |
 

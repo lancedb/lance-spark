@@ -60,7 +60,7 @@ jobs:
           inputs.mode == 'dry_run'
         run: |
           mvn --batch-mode -DskipTests package
-      - name: Publish with Java 8
+      - name: Publish to Maven Central
         if: |
           github.event_name == 'release' ||
           inputs.mode == 'release'
