@@ -90,9 +90,6 @@ public class LanceFragmentColumnarBatchScanner implements AutoCloseable {
     if (currentColumnarBatch != null) {
       currentColumnarBatch.close();
     }
-    if (currentColumnarBatch != null) {
-      currentColumnarBatch.close();
-    }
     arrowReader.close();
     fragmentScanner.close();
   }
