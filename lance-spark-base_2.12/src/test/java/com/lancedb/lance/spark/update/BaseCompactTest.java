@@ -136,10 +136,7 @@ public abstract class BaseCompactTest {
   public void testWithoutArgs() {
     prepareDataset();
 
-    Dataset<Row> result =
-        spark.sql(
-            String.format(
-                "alter table %s compact", fullTable));
+    Dataset<Row> result = spark.sql(String.format("alter table %s compact", fullTable));
 
     Assertions.assertEquals("[10,1,10,1]", result.collectAsList().get(0).toString());
   }
