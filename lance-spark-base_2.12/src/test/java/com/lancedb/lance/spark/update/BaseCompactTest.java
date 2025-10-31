@@ -78,8 +78,7 @@ public abstract class BaseCompactTest {
 
     Dataset<Row> result =
         spark.sql(
-            String.format(
-                "optimize %s compact with (target_rows_per_fragment=20000)", fullTable));
+            String.format("optimize %s compact with (target_rows_per_fragment=20000)", fullTable));
 
     Assertions.assertEquals(
         "StructType(StructField(fragments_removed,LongType,true),StructField(fragments_added,LongType,true),StructField(files_removed,LongType,true),StructField(files_added,LongType,true))",
