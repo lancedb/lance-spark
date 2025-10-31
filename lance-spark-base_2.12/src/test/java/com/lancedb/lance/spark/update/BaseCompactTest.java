@@ -108,4 +108,39 @@ public abstract class BaseCompactTest {
 
     Assertions.assertEquals("[0,0,0,0]", result.collectAsList().get(0).toString());
   }
+
+  @Test
+  public void testWithFullArgs() {
+    prepareDataset();
+
+    Dataset<Row> result =
+        spark.sql(
+            String.format(
+                "alter table %s compact with "
+                    + "("
+                    + "target_rows_per_fragment=20000,"
+                    + "max_rows_per_group=20000,"
+                    + "max_bytes_per_file=20000,"
+                    + "materialize_deletions=true,"
+                    + "materialize_deletions_threshold=0.2f,"
+                    + "num_threads=2,"
+                    + "batch_size=2000,"
+                    + "defer_index_remap=true"
+                    + ")",
+                fullTable));
+
+    Assertions.assertEquals("[10,1,10,1]", result.collectAsList().get(0).toString());
+  }
+
+  @Test
+  public void testWithoutArgs() {
+    prepareDataset();
+
+    Dataset<Row> result =
+        spark.sql(
+            String.format(
+                "alter table %s compact", fullTable));
+
+    Assertions.assertEquals("[10,1,10,1]", result.collectAsList().get(0).toString());
+  }
 }
