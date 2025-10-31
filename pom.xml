@@ -4,7 +4,7 @@
 
     <groupId>com.lancedb</groupId>
     <artifactId>lance-spark-root</artifactId>
-    <version>0.0.14</version>
+    <version>0.0.15</version>
     <packaging>pom</packaging>
 
     <name>${project.artifactId}</name>
@@ -50,7 +50,7 @@
     </distributionManagement>
 
     <properties>
-        <lance-spark.version>0.0.14</lance-spark.version>
+        <lance-spark.version>0.0.15</lance-spark.version>
         <lance.version>0.38.3</lance.version>
         <lance-namespace.version>0.0.19</lance-namespace.version>
 
