@@ -46,7 +46,7 @@ public class LanceConfig implements Serializable {
     this.datasetName = datasetName;
     this.datasetUri = datasetUri;
     this.pushDownFilters = pushDownFilters;
-    this.options = new HashMap<>(options);
+    this.options = new HashMap<>(options.asCaseSensitiveMap());
   }
 
   public static LanceConfig from(Map<String, String> properties) {
