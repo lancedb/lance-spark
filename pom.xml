@@ -445,23 +445,13 @@
 
     <profiles>
         <profile>
-            <id>jdk8</id>
-            <activation>
-                <jdk>[1.8,1.8.999]</jdk>
-            </activation>
-            <properties>
-                <maven.compiler.source>1.8</maven.compiler.source>
-                <maven.compiler.target>1.8</maven.compiler.target>
-            </properties>
-        </profile>
-        <profile>
             <id>jdk11+</id>
             <activation>
                 <jdk>[11,)</jdk>
             </activation>
             <properties>
-                
-                <maven.compiler.release>8</maven.compiler.release>
+
+                <maven.compiler.release>11</maven.compiler.release>
             </properties>
             <build>
                 <plugins>
