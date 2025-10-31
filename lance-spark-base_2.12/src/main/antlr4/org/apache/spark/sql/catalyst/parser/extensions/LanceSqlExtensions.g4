@@ -19,8 +19,8 @@ singleStatement
     ;
 
 statement
-    : ALTER TABLE multipartIdentifier ADD COLUMNS columnList FROM identifier                            #addColumnsBackfill
-    | ALTER TABLE multipartIdentifier COMPACT (WITH '(' (namedArgument (',' namedArgument)*)? ')')?     #compact
+    : ALTER TABLE multipartIdentifier ADD COLUMNS columnList FROM identifier                         #addColumnsBackfill
+    | OPTIMIZE multipartIdentifier COMPACT (WITH '(' (namedArgument (',' namedArgument)*)? ')')?     #compact
     ;
 
 multipartIdentifier
@@ -65,6 +65,7 @@ ALTER: 'ALTER';
 COLUMNS: 'COLUMNS';
 COMPACT: 'COMPACT';
 FROM: 'FROM';
+OPTIMIZE: 'OPTIMIZE';
 TABLE: 'TABLE';
 WITH: 'WITH';
 

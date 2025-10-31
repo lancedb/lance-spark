@@ -79,7 +79,7 @@ public abstract class BaseCompactTest {
     Dataset<Row> result =
         spark.sql(
             String.format(
-                "alter table %s compact with (target_rows_per_fragment=20000)", fullTable));
+                "optimize %s compact with (target_rows_per_fragment=20000)", fullTable));
 
     Assertions.assertEquals(
         "StructType(StructField(fragments_removed,LongType,true),StructField(fragments_added,LongType,true),StructField(files_removed,LongType,true),StructField(files_added,LongType,true))",
@@ -93,7 +93,7 @@ public abstract class BaseCompactTest {
 
     Dataset<Row> result =
         spark.sql(
-            String.format("alter table %s compact with (target_rows_per_fragment=5)", fullTable));
+            String.format("optimize %s compact with (target_rows_per_fragment=5)", fullTable));
 
     Assertions.assertEquals("[10,2,10,2]", result.collectAsList().get(0).toString());
   }
@@ -104,7 +104,7 @@ public abstract class BaseCompactTest {
 
     Dataset<Row> result =
         spark.sql(
-            String.format("alter table %s compact with (target_rows_per_fragment=1)", fullTable));
+            String.format("optimize %s compact with (target_rows_per_fragment=1)", fullTable));
 
     Assertions.assertEquals("[0,0,0,0]", result.collectAsList().get(0).toString());
   }
@@ -116,7 +116,7 @@ public abstract class BaseCompactTest {
     Dataset<Row> result =
         spark.sql(
             String.format(
-                "alter table %s compact with "
+                "optimize %s compact with "
                     + "("
                     + "target_rows_per_fragment=20000,"
                     + "max_rows_per_group=20000,"
@@ -136,7 +136,7 @@ public abstract class BaseCompactTest {
   public void testWithoutArgs() {
     prepareDataset();
 
-    Dataset<Row> result = spark.sql(String.format("alter table %s compact", fullTable));
+    Dataset<Row> result = spark.sql(String.format("optimize %s compact", fullTable));
 
     Assertions.assertEquals("[10,1,10,1]", result.collectAsList().get(0).toString());
   }
